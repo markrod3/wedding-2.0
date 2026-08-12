@@ -1338,32 +1338,32 @@ a{ color:inherit; text-decoration:none; }
 
   /* ---- YOUR PHOTOS — order is the order along the path ---- */
   var PHOTOS = [
-    { src:"/shared/images/m19.jpg", alt:"At a table one evening" },
-    { src:"/shared/images/m23.jpg", alt:"Outside a cafe" },
-    { src:"/shared/images/m17.JPG", alt:"Birthday cake" },
-    { src:"/shared/images/m11.JPG", alt:"A picnic in the park" },
-    { src:"/shared/images/m08.JPG", alt:"By a river in the mountains" },
-    { src:"/shared/images/m06.JPG", alt:"With a bouquet" },
-    { src:"/shared/images/m01.jpg", alt:"Across the water from the city" },
-    { src:"/shared/images/m03.jpg", alt:"Under the palms" },
-    { src:"/shared/images/m09.jpg", alt:"New Year's Eve" },
-    { src:"/shared/images/m14.JPG", alt:"Dressed up for a night out" },
-    { src:"/shared/images/m04.jpg", alt:"A windy day by the river" },
-    { src:"/shared/images/m21.jpg", alt:"Against a brick wall" },
-    { src:"/shared/images/m22.jpg", alt:"In front of a mural" },
-    { src:"/shared/images/m20.jpg", alt:"Messing about in the driveway" },
-    { src:"/shared/images/m18.JPG", alt:"In the pool" },
-    { src:"/shared/images/m02.JPG", alt:"Among the flowers" },
-    { src:"/shared/images/m05.JPG", alt:"Under the arches at night" },
-    { src:"/shared/images/m07.JPG", alt:"A walk after dark" },
-    { src:"/shared/images/m10.jpg", alt:"Coffee on the corner" },
-    { src:"/shared/images/m12.jpg", alt:"Dressed up on the terrace" },
-    { src:"/shared/images/m13.jpg", alt:"A rooftop with a view" },
-    { src:"/shared/images/m16.JPG", alt:"An autumn afternoon" },
-    { src:"/shared/images/m24.JPG", alt:"Caught in the mirror" },
-    { src:"/shared/images/m25.jpg", alt:"A night out downtown" },
-    { src:"/shared/images/m26.jpg", alt:"A ferry ride with the skyline" },
-    { src:"/shared/images/m27.JPG", alt:"By the harbor palms" },
+    { src:"/shared/images/thumbs/m19.jpg", alt:"At a table one evening" },
+    { src:"/shared/images/thumbs/m23.jpg", alt:"Outside a cafe" },
+    { src:"/shared/images/thumbs/m17.JPG", alt:"Birthday cake" },
+    { src:"/shared/images/thumbs/m11.JPG", alt:"A picnic in the park" },
+    { src:"/shared/images/thumbs/m08.JPG", alt:"By a river in the mountains" },
+    { src:"/shared/images/thumbs/m06.JPG", alt:"With a bouquet" },
+    { src:"/shared/images/thumbs/m01.jpg", alt:"Across the water from the city" },
+    { src:"/shared/images/thumbs/m03.jpg", alt:"Under the palms" },
+    { src:"/shared/images/thumbs/m09.jpg", alt:"New Year's Eve" },
+    { src:"/shared/images/thumbs/m14.JPG", alt:"Dressed up for a night out" },
+    { src:"/shared/images/thumbs/m04.jpg", alt:"A windy day by the river" },
+    { src:"/shared/images/thumbs/m21.jpg", alt:"Against a brick wall" },
+    { src:"/shared/images/thumbs/m22.jpg", alt:"In front of a mural" },
+    { src:"/shared/images/thumbs/m20.jpg", alt:"Messing about in the driveway" },
+    { src:"/shared/images/thumbs/m18.JPG", alt:"In the pool" },
+    { src:"/shared/images/thumbs/m02.JPG", alt:"Among the flowers" },
+    { src:"/shared/images/thumbs/m05.JPG", alt:"Under the arches at night" },
+    { src:"/shared/images/thumbs/m07.JPG", alt:"A walk after dark" },
+    { src:"/shared/images/thumbs/m10.jpg", alt:"Coffee on the corner" },
+    { src:"/shared/images/thumbs/m12.jpg", alt:"Dressed up on the terrace" },
+    { src:"/shared/images/thumbs/m13.jpg", alt:"A rooftop with a view" },
+    { src:"/shared/images/thumbs/m16.JPG", alt:"An autumn afternoon" },
+    { src:"/shared/images/thumbs/m24.JPG", alt:"Caught in the mirror" },
+    { src:"/shared/images/thumbs/m25.jpg", alt:"A night out downtown" },
+    { src:"/shared/images/thumbs/m26.jpg", alt:"A ferry ride with the skyline" },
+    { src:"/shared/images/thumbs/m27.JPG", alt:"By the harbor palms" },
   ];
 
   /* ---- SETTINGS ---- */
@@ -1492,8 +1492,8 @@ a{ color:inherit; text-decoration:none; }
     function openPhoto(photo){
       if(!band || !expandImg || !photo || !photo.src) return;
       /* swap in the bigger file where one exists; data-URI builds keep the tile */
-      var big = photo.src.indexOf("images/mq/") === 0
-        ? photo.src.replace("images/mq/", "images/mq/large/")
+      var big = photo.src.indexOf("/shared/images/thumbs/") === 0
+        ? photo.src.replace("/shared/images/thumbs/", "/shared/images/")
         : photo.src;
       expandImg.src = big;
       expandImg.alt = photo.alt || "";
