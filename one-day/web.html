@@ -251,7 +251,7 @@ a{ color:inherit; text-decoration:none; }
   visibility:hidden; pointer-events:none;
 }
 .mqp-root{
-  --mqp-tile-px:clamp(126px,9.8vw,168px);   /* on-screen tile width */
+  --mqp-tile-px:clamp(76px,5.9vw,101px);   /* on-screen tile width -- 0.6x */
   --mqp-tile-w:72px;          /* recomputed by the engine from --mqp-tile-px */
   --mqp-tile-h:96px;
   --mqp-radius:3px;
@@ -1360,7 +1360,7 @@ a{ color:inherit; text-decoration:none; }
     path: "M1 352.434C58.5872 398.935 387.926 468.938 482.583 352.434C600.905 206.805 525.516 99.7789 427.332 162.961C329.149 226.144 352.902 385.723 515.041 410.302C644.752 429.966 943.56 324.94 995 299.5",
     viewBox: [0, 0, 996, 569],   /* padded: the curve rises above its own artboard, and rotated tiles need room */
 
-    baseVelocity: 2.5,        /* % of the path per second */
+    baseVelocity: 1.5,        /* % of the path per second */
     direction: "normal",      /* "normal" | "reverse" */
     repeat: 1,                /* 16 distinct photos fill the curve on their own */
 
