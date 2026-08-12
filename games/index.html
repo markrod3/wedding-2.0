@@ -1,9 +1,2111 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title></title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Bernadette &amp; Mark — Games</title>
+<meta name="description" content="Three puzzles, three levels each, made for our wedding.">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<meta name="theme-color" content="#FFDA00">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@300;400;500;600;700;800&family=Zilla+Slab:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================================
+   BERNADETTE & MARK — WEDDING GAMES
+   ----------------------------------------------------------------------------
+     1. TOKENS       every colour / font / size knob
+     2. SPLASH       the loading screen
+     3. LANDING      game cards + difficulty bars
+     4. BOARDS PAGE  the consolidated leaderboard
+     5. GAME FRAME   shared chrome, sized to fit the viewport exactly
+     6. CROSSWORD / 7. CONNECTIONS / 8. STRANDS
+     9. MARKUP  ·  10. DATA (edit the puzzles here)  ·  11. ENGINE
+   ============================================================================ */
+
+/* ===== 1. TOKENS ========================================================== */
+:root{
+  --font-ui:      'Libre Franklin', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-display: 'Zilla Slab', Georgia, 'Times New Roman', serif;
+
+  --ink:#121212; --ink-soft:#5A594E; --ink-faint:#7F7F7F;
+  --paper:#FFFFFF; --paper-warm:#F7F7F2; --rule:#DCDCD4; --rule-strong:#121212;
+
+  /* Games-app palette */
+  --splash:#FFDA00;
+  --blue:#7C90DF;      --blue-soft:#A8BAF2;   --blue-tint:#DDE3FA;
+  --purple:#B3A5F5;    --purple-soft:#C9BFF8; --purple-tint:#E7E2FD;
+  --mint:#BCDDD1;      --mint-soft:#D2E8E0;   --mint-tint:#EAF4F0;
+  --grey-card:#D6D6D6; --grey-soft:#E6E6E6;
+
+  --xw-block:#121212; --xw-cell:#FFFFFF; --xw-cursor:#FFDA00; --xw-word:#A7D8FF;
+  --xw-wrong:#E4584B; --xw-revealed:#2A7AE2;
+
+  --cx-tile:#EFEFE6; --cx-selected:#5A594E;
+  --cx-yellow:#F9DF6D; --cx-green:#A0C35A; --cx-blue:#B0C4EF; --cx-purple:#BA81C5;
+
+  --st-theme:#AEDFEE; --st-span:#FFDA00; --st-active:#D0D0C8; --st-hint:#EFEFE6;
+
+  --header-h:52px; --radius:16px;
+  --ease:cubic-bezier(.2,.8,.3,1);
+  color-scheme: only light;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html{-webkit-text-size-adjust:100%;color-scheme:only light;background-color:#FFF;forced-color-adjust:none;}
+body{font-family:var(--font-ui);color:var(--ink);background:var(--paper);overscroll-behavior:none;}
+button{font-family:inherit;color:inherit;background:none;border:none;cursor:pointer;}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
+
+.page-bg{position:fixed;inset:0;z-index:-2;background:var(--paper);pointer-events:none;}
+.app{
+  height:100vh;height:100dvh;
+  display:flex;flex-direction:column;overflow:hidden;
+  background:var(--paper);color:var(--ink);position:relative;z-index:0;
+}
+
+/* ===== 2. SPLASH ========================================================== */
+#splash{
+  position:fixed;inset:0;z-index:200;background:var(--splash);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:0;transition:opacity .5s var(--ease), visibility .5s;
+}
+#splash.gone{opacity:0;visibility:hidden;pointer-events:none;}
+.splash-couple{
+  font-family:var(--font-display);font-weight:500;font-style:italic;
+  font-size:clamp(1.1rem,4.4vw,1.6rem);letter-spacing:.01em;
+  animation:splashUp .6s var(--ease) both;
+}
+.splash-word{
+  font-family:var(--font-display);font-weight:700;
+  font-size:clamp(3.4rem,15vw,5.4rem);line-height:.95;letter-spacing:-.02em;
+  animation:splashUp .6s var(--ease) .08s both;
+}
+.splash-line{
+  position:absolute;bottom:14%;left:0;right:0;text-align:center;
+  font-size:.9rem;font-weight:500;padding:0 32px;
+  animation:splashFade 1.1s var(--ease) .3s both;
+}
+.splash-dots{display:inline-block;width:1.1em;text-align:left;}
+@keyframes splashUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+@keyframes splashFade{from{opacity:0;}to{opacity:.72;}}
+
+/* ===== 3. LANDING ========================================================= */
+.view{display:none;flex:1;min-height:0;flex-direction:column;}
+.view.active{display:flex;}
+.view.scrolls{overflow-y:auto;-webkit-overflow-scrolling:touch;}
+
+.hub{
+  padding:28px 16px calc(36px + env(safe-area-inset-bottom));
+  max-width:640px;margin:0 auto;width:100%;
+}
+.hub-mast{text-align:center;margin-bottom:26px;}
+.hub-mast .couple{
+  font-family:var(--font-display);font-style:italic;font-weight:500;
+  font-size:1.05rem;color:var(--ink-soft);
+}
+.hub-mast h1{
+  font-family:var(--font-display);font-weight:700;
+  font-size:clamp(1.95rem,8vw,2.7rem);line-height:1.06;letter-spacing:-.015em;
+  max-width:15ch;margin:6px auto 0;
+}
+.hub-mast .hub-sub{
+  font-size:.94rem;line-height:1.55;color:var(--ink-soft);
+  max-width:34ch;margin:12px auto 0;
+}
+
+.gcard-group{margin-bottom:22px;}
+.gcard{
+  border-radius:var(--radius);padding:22px 22px 18px;position:relative;
+  display:block;width:100%;text-align:left;
+  animation:cardIn .5s var(--ease) both;
+}
+.gcard-group:nth-child(2) .gcard{animation-delay:.06s;}
+.gcard-group:nth-child(3) .gcard{animation-delay:.12s;}
+.gcard-group:nth-child(4) .gcard{animation-delay:.18s;}
+@keyframes cardIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
+.gcard h2{
+  font-family:var(--font-display);font-weight:700;
+  font-size:clamp(1.7rem,7vw,2.1rem);line-height:1.05;margin-bottom:6px;
+}
+.gcard p{font-size:.98rem;line-height:1.35;color:#2f2f2f;max-width:23ch;}
+.gcard .foot{
+  display:flex;justify-content:space-between;align-items:flex-end;
+  gap:12px;margin-top:26px;
+}
+.gcard .foot .n{font-size:.92rem;font-weight:700;}
+.gcard .foot .by{
+  font-size:.78rem;letter-spacing:.04em;color:#3d3d3d;text-align:right;
+  text-transform:uppercase;
+}
+.gcard .glyph{position:absolute;top:20px;right:20px;width:60px;height:60px;}
+
+.levels{display:flex;gap:8px;margin-top:8px;}
+.levels button{
+  flex:1;border-radius:12px;padding:15px 6px;
+  font-size:.86rem;font-weight:700;letter-spacing:.01em;
+  box-shadow:0 3px 0 -1px rgba(0,0,0,.10), 0 7px 0 -3px rgba(0,0,0,.07);
+  transition:transform .16s var(--ease), filter .16s var(--ease);
+}
+.levels button:hover{filter:brightness(.97);}
+.levels button:active{transform:translateY(2px);box-shadow:0 1px 0 -1px rgba(0,0,0,.1);}
+
+.g-blue   .gcard{background:var(--blue);}     .g-blue   .levels button{background:var(--blue-soft);}
+.g-purple .gcard{background:var(--purple);}   .g-purple .levels button{background:var(--purple-soft);}
+.g-mint   .gcard{background:var(--mint);}     .g-mint   .levels button{background:var(--mint-soft);}
+.g-grey   .gcard{background:var(--grey-card);}
+
+.gcard.wide-link{padding:20px 22px;display:flex;align-items:center;gap:14px;}
+.gcard.wide-link h2{font-size:1.35rem;margin:0;}
+.gcard.wide-link p{font-size:.86rem;margin-top:3px;max-width:none;}
+.gcard.wide-link .arrow{margin-left:auto;font-size:1.3rem;}
+
+/* little game glyphs, drawn in CSS so nothing has to load */
+.glyph{border-radius:9px;overflow:hidden;display:grid;}
+.glyph.xw{grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:2px;background:#121212;padding:3px;}
+.glyph.xw i{background:#fff;border-radius:1px;}
+.glyph.xw i:nth-child(2),.glyph.xw i:nth-child(4),.glyph.xw i:nth-child(9){background:#121212;}
+.glyph.cx{grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:2px;background:#121212;padding:3px;}
+.glyph.cx i{background:#9E5FB0;border-radius:1px;}
+.glyph.cx i:nth-child(3),.glyph.cx i:nth-child(5){background:#fff;}
+.glyph.st{background:transparent;border-radius:0;display:block;overflow:visible;}
+
+/* ===== 4. BOARDS PAGE ===================================================== */
+.boards{padding:22px 16px calc(40px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto;width:100%;}
+.boards-intro{font-size:.9rem;line-height:1.55;color:var(--ink-soft);margin-bottom:22px;}
+.bsec{border-radius:var(--radius);padding:18px 18px 14px;margin-bottom:16px;}
+.bsec.g-blue{background:var(--blue-tint);}
+.bsec.g-purple{background:var(--purple-tint);}
+.bsec.g-mint{background:var(--mint-tint);}
+.bsec h3{font-family:var(--font-display);font-weight:700;font-size:1.4rem;margin-bottom:10px;}
+.seg{display:flex;gap:5px;background:rgba(255,255,255,.6);border-radius:999px;padding:4px;margin-bottom:6px;}
+.seg button{
+  flex:1;border-radius:999px;padding:8px 4px;font-size:.74rem;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);
+  transition:background .18s var(--ease),color .18s var(--ease);
+}
+.seg button[aria-pressed="true"]{background:var(--ink);color:#fff;}
+
+/* ===== 5. GAME FRAME ====================================================== */
+.topbar{
+  height:var(--header-h);flex:0 0 var(--header-h);
+  display:flex;align-items:center;gap:8px;padding:0 10px;
+  background:var(--paper);border-bottom:1px solid var(--rule);
+}
+.topbar-title{font-family:var(--font-display);font-weight:600;font-size:1.02rem;margin-right:auto;line-height:1.1;}
+.topbar-title small{
+  display:block;font-family:var(--font-ui);font-weight:700;font-size:.6rem;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin-top:1px;
+}
+.icon-btn{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;
+  transition:background .18s var(--ease),transform .18s var(--ease);flex:0 0 auto;}
+.icon-btn:hover{background:var(--paper-warm);}
+.icon-btn:active{transform:scale(.9);}
+.icon-btn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
+.pill{font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  padding:7px 12px;border:1px solid var(--ink);border-radius:999px;
+  transition:background .18s var(--ease),color .18s var(--ease);}
+.pill:hover{background:var(--ink);color:var(--paper);}
+.pill.ghost{border-color:var(--rule);color:var(--ink-soft);}
+.pill.ghost:hover{background:var(--paper-warm);color:var(--ink);}
+
+/* A game page is exactly one viewport tall: a fixed strip of chrome, then one
+   flexible area that the board is measured into. Nothing scrolls. */
+.gameview{display:none;flex:1;min-height:0;flex-direction:column;overflow:hidden;}
+.gameview.active{display:flex;}
+.gpad{width:100%;max-width:560px;margin:0 auto;padding:0 12px;display:flex;flex-direction:column;flex:1;min-height:0;}
+.gbar{
+  flex:0 0 auto;display:flex;align-items:center;gap:8px;
+  padding:8px 0;border-bottom:1px solid var(--rule);
+}
+.gbar .lvl{
+  font-size:.62rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+  padding:4px 9px;border-radius:999px;background:var(--paper-warm);color:var(--ink-soft);
+}
+.gbar .spacer{margin-left:auto;}
+.clockread{display:flex;align-items:center;gap:6px;font-size:.85rem;font-weight:700;font-variant-numeric:tabular-nums;}
+.clockread svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;}
+.clockread .pen{color:var(--xw-wrong);font-size:.76rem;}
+.fitarea{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;width:100%;padding:8px 0;}
+
+/* --- modal / toast / confetti -------------------------------------------- */
+.scrim{position:fixed;inset:0;z-index:100;background:rgba(18,18,18,.45);
+  display:grid;place-items:center;padding:18px;opacity:0;visibility:hidden;
+  transition:opacity .28s var(--ease),visibility .28s;}
+.scrim.open{opacity:1;visibility:visible;}
+.sheet{background:var(--paper);border-radius:12px;width:min(520px,100%);max-height:86dvh;
+  overflow-y:auto;padding:28px 24px 24px;position:relative;
+  transform:translateY(18px) scale(.97);opacity:0;
+  transition:transform .34s var(--ease),opacity .34s var(--ease);}
+.scrim.open .sheet{transform:none;opacity:1;}
+.sheet h3{font-family:var(--font-display);font-size:1.7rem;font-weight:700;margin-bottom:6px;}
+.sheet .kicker{font-size:.66rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:12px;}
+.sheet p{font-size:.92rem;line-height:1.6;margin-bottom:12px;color:#2c2c2c;}
+.sheet ul{margin:0 0 14px 18px;}
+.sheet li{font-size:.9rem;line-height:1.55;margin-bottom:7px;}
+.sheet .close{position:absolute;top:10px;right:10px;}
+.sheet .cta{display:block;width:100%;margin-top:16px;padding:14px;border-radius:999px;
+  background:var(--ink);color:var(--paper);font-weight:700;font-size:.86rem;
+  transition:transform .2s var(--ease),opacity .2s;}
+.sheet .cta:hover{opacity:.86;}
+.sheet .cta:active{transform:scale(.97);}
+.sheet .cta.secondary{background:none;color:var(--ink);border:1px solid var(--ink);margin-top:9px;}
+.sheet .cta.danger{background:var(--xw-wrong);}
+.legend-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:.88rem;}
+.legend-swatch{width:22px;height:22px;border-radius:4px;flex:0 0 auto;}
+.sheet p.note{font-size:.85rem;background:var(--paper-warm);border-radius:8px;padding:11px 13px;color:var(--ink-soft);}
+
+.toast-rail{position:fixed;left:50%;top:calc(var(--header-h) + 12px);transform:translateX(-50%);
+  z-index:90;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;}
+.toast{background:var(--ink);color:var(--paper);border-radius:5px;padding:10px 17px;
+  font-size:.82rem;font-weight:600;white-space:nowrap;
+  animation:toastIn .28s var(--ease), toastOut .3s var(--ease) forwards;animation-delay:0s,1.5s;}
+@keyframes toastIn{from{opacity:0;transform:translateY(-10px) scale(.95);}to{opacity:1;transform:none;}}
+@keyframes toastOut{to{opacity:0;transform:translateY(-8px);}}
+.confetti-layer{position:fixed;inset:0;pointer-events:none;z-index:95;overflow:hidden;}
+.confetti{position:absolute;width:9px;height:14px;opacity:0;animation:confettiFall linear forwards;}
+@keyframes confettiFall{
+  0%{opacity:1;transform:translate3d(0,-10vh,0) rotate(0deg);}
+  100%{opacity:.9;transform:translate3d(var(--dx,0),110vh,0) rotate(var(--spin,540deg));}}
+
+/* --- leaderboard rows ----------------------------------------------------- */
+.lb-head{font-size:.64rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-faint);margin:20px 0 2px;padding-bottom:6px;border-bottom:1px solid var(--ink);}
+.lb-row{display:flex;align-items:center;gap:12px;padding:10px 6px;
+  border-bottom:1px solid rgba(0,0,0,.10);border-radius:4px;animation:cardIn .3s var(--ease) both;}
+.lb-row:nth-child(2){animation-delay:.06s;} .lb-row:nth-child(3){animation-delay:.12s;}
+.lb-rank{width:24px;height:24px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;
+  font-size:.74rem;font-weight:800;background:rgba(255,255,255,.75);}
+.lb-row.r1 .lb-rank{background:var(--cx-yellow);}
+.lb-row.r2 .lb-rank{background:#E2E2DA;}
+.lb-row.r3 .lb-rank{background:#E9C9A6;}
+.lb-name{flex:1;min-width:0;font-size:.92rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lb-time{font-size:.94rem;font-weight:700;font-variant-numeric:tabular-nums;}
+.lb-row.me{background:rgba(255,255,255,.85);}
+.lb-empty{padding:16px 6px;font-size:.86rem;color:var(--ink-soft);text-align:center;}
+.lb-form{display:flex;gap:8px;margin-top:16px;}
+.lb-form input{flex:1;min-width:0;font-family:inherit;font-size:.92rem;padding:11px 13px;
+  border:1px solid var(--rule);border-radius:999px;background:var(--paper);color:var(--ink);}
+.lb-form input:focus{outline:none;border-color:var(--ink);}
+.lb-form input::placeholder{color:var(--ink-faint);opacity:1;}
+.lb-form input:-webkit-autofill,.lb-form input:-webkit-autofill:focus{
+  -webkit-text-fill-color:var(--ink);-webkit-box-shadow:0 0 0 40px var(--paper) inset;}
+.lb-form .pill{flex:0 0 auto;padding:11px 17px;}
+.lb-added{margin-top:14px;font-size:.85rem;font-weight:600;color:var(--ink-soft);text-align:center;}
+.score-box{border:1px solid var(--rule);border-radius:10px;padding:4px 14px;margin:16px 0 6px;}
+.score-line{display:flex;justify-content:space-between;align-items:center;padding:9px 0;font-size:.88rem;}
+.score-line + .score-line{border-top:1px solid var(--rule);}
+.score-line b{font-variant-numeric:tabular-nums;font-size:.95rem;}
+.score-line.total b{font-family:var(--font-display);font-size:1.35rem;}
+
+
+/* ===== 6. CROSSWORD ======================================================= */
+.menu-wrap{position:relative;}
+.menu{position:absolute;right:0;top:calc(100% + 6px);z-index:50;background:var(--paper);
+  border:1px solid var(--rule);border-radius:8px;box-shadow:0 14px 34px -14px rgba(0,0,0,.32);
+  min-width:166px;padding:5px;opacity:0;visibility:hidden;transform:translateY(-6px);
+  transition:opacity .2s var(--ease),transform .2s var(--ease),visibility .2s;}
+.menu.open{opacity:1;visibility:visible;transform:none;}
+.menu button{display:block;width:100%;text-align:left;padding:9px 12px;border-radius:5px;font-size:.84rem;}
+.menu button:hover{background:var(--paper-warm);}
+.menu hr{border:none;border-top:1px solid var(--rule);margin:5px 0;}
+
+#xw-fit{position:relative;}
+.xw-body{display:flex;flex-direction:column;flex:1;min-height:0;}
+.xw-left{display:flex;flex-direction:column;flex:1;min-height:0;}
+.xw-grid{display:grid;border:2px solid var(--rule-strong);background:var(--rule-strong);
+  gap:1px;touch-action:manipulation;}
+.xw-cell{position:relative;background:var(--xw-cell);display:grid;place-items:center;
+  overflow:hidden;transition:background .12s linear;}
+.xw-cell.block{background:var(--xw-block);}
+.xw-cell.in-word{background:var(--xw-word);}
+.xw-cell.cursor{background:var(--xw-cursor);}
+.xw-cell .num{position:absolute;top:1px;left:2px;font-size:.55em;font-weight:600;line-height:1;pointer-events:none;}
+.xw-cell .ltr{font-size:1em;font-weight:500;line-height:1;text-transform:uppercase;transform:translateY(6%);}
+.xw-cell .ltr.pop{animation:letterPop .16s var(--ease);}
+@keyframes letterPop{from{transform:translateY(6%) scale(.55);opacity:.4;}to{transform:translateY(6%) scale(1);opacity:1;}}
+.xw-cell.wrong::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(to top left,transparent calc(50% - .8px),var(--xw-wrong) calc(50% - .8px),var(--xw-wrong) calc(50% + .8px),transparent calc(50% + .8px));}
+.xw-cell.revealed .ltr{color:var(--xw-revealed);}
+.xw-cell.correct-flash{animation:cellFlash .5s var(--ease);}
+@keyframes cellFlash{0%{background:var(--xw-cursor);}55%{background:#B6E8A8;}100%{background:var(--xw-word);}}
+.xw-cell.finale{animation:cellFinale .7s var(--ease) both;}
+@keyframes cellFinale{0%{transform:scale(1);background:var(--xw-cell);}
+  40%{transform:scale(.82);background:var(--xw-cursor);}100%{transform:scale(1);background:var(--xw-cell);}}
+.xw-pause{position:absolute;inset:0;background:rgba(255,255,255,.97);display:none;
+  flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:5;
+  border:2px solid var(--rule-strong);}
+.xw-pause.on{display:flex;}
+
+.xw-cluebar{flex:0 0 auto;display:flex;margin:6px 0;background:var(--xw-word);border-radius:4px;overflow:hidden;}
+.xw-cluebar .arrow{flex:0 0 38px;display:grid;place-items:center;transition:background .16s;}
+.xw-cluebar .arrow:hover{background:rgba(0,0,0,.07);}
+.xw-cluebar .arrow svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
+.xw-cluebar .text{flex:1;display:flex;align-items:center;min-height:48px;padding:8px 4px;font-size:.88rem;font-weight:500;line-height:1.3;}
+.xw-cluebar .text b{font-weight:800;margin-right:7px;white-space:nowrap;}
+
+.xw-lists{display:none;}
+.xw-clue-col{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;}
+.xw-clue-col h4{font-size:.68rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;
+  padding-bottom:6px;border-bottom:1px solid var(--ink);margin-bottom:4px;}
+.xw-clue-col ol{list-style:none;overflow-y:auto;flex:1;min-height:0;padding-right:4px;}
+.xw-clue{display:flex;gap:9px;padding:6px 8px;font-size:.84rem;line-height:1.35;cursor:pointer;
+  border-left:3px solid transparent;transition:background .16s,border-color .16s;}
+.xw-clue:hover{background:var(--paper-warm);}
+.xw-clue b{font-weight:700;min-width:17px;text-align:right;}
+.xw-clue.in-word{background:var(--xw-word);}
+.xw-clue.active{background:var(--xw-cursor);border-left-color:var(--ink);}
+.xw-clue.done{color:var(--ink-faint);}
+
+.kb{flex:0 0 auto;background:var(--paper-warm);padding:6px 3px calc(6px + env(safe-area-inset-bottom));
+  border-top:1px solid var(--rule);}
+.kb-row{display:flex;justify-content:center;gap:5px;margin-bottom:5px;}
+.kb-row:last-child{margin-bottom:0;}
+.kb button{flex:1;max-width:38px;height:42px;border-radius:5px;background:var(--paper);
+  font-size:1rem;font-weight:600;box-shadow:0 1px 0 rgba(0,0,0,.22);display:grid;place-items:center;
+  transition:transform .08s,background .12s;}
+.kb button:active{transform:translateY(1px) scale(.94);background:var(--xw-word);}
+.kb button.wide{max-width:56px;flex:1.4;}
+.kb button svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
+
+@media (min-width:900px){
+  #view-xw .gpad{max-width:960px;}
+  .xw-body{flex-direction:row;gap:24px;}
+  .xw-left{flex:0 0 460px;}
+  .xw-lists{display:flex;gap:20px;flex:1;min-width:0;min-height:0;padding:10px 0;}
+  .kb{display:none;}
+}
+
+/* ===== 7. CONNECTIONS ===================================================== */
+#view-cx .gpad{max-width:520px;}
+.cx-prompt{flex:0 0 auto;font-size:.9rem;font-weight:500;text-align:center;padding:8px 0 4px;}
+.cx-board{flex:1;min-height:0;display:flex;flex-direction:column;gap:7px;padding:4px 0;}
+.cx-solved-wrap{flex:0 0 auto;display:flex;flex-direction:column;gap:7px;}
+.cx-solved{border-radius:7px;padding:11px 8px;text-align:center;animation:cardIn .45s var(--ease) both;}
+.cx-solved .cat{font-size:.82rem;font-weight:800;text-transform:uppercase;}
+.cx-solved .members{font-size:.8rem;margin-top:2px;}
+.cx-solved.y{background:var(--cx-yellow);} .cx-solved.g{background:var(--cx-green);}
+.cx-solved.b{background:var(--cx-blue);}   .cx-solved.p{background:var(--cx-purple);}
+.cx-grid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(4,1fr);gap:7px;}
+.cx-tile{min-height:0;border-radius:7px;background:var(--cx-tile);display:grid;place-items:center;
+  padding:2px;font-weight:700;font-size:clamp(.58rem,2.5vw,.95rem);text-transform:uppercase;
+  text-align:center;line-height:1.05;word-break:break-word;hyphens:auto;
+  transition:background .14s var(--ease),color .14s var(--ease),transform .12s var(--ease);}
+.cx-tile:active{transform:scale(.94);}
+.cx-tile.sel{background:var(--cx-selected);color:var(--paper);transform:scale(.96);}
+.cx-tile.jump{animation:tileJump .32s var(--ease);}
+@keyframes tileJump{0%,100%{transform:translateY(0) scale(.96);}45%{transform:translateY(-13px) scale(.96);}}
+.cx-tile.shake{animation:tileShake .5s;}
+@keyframes tileShake{0%,100%{transform:translateX(0) scale(.96);}
+  15%,45%,75%{transform:translateX(-6px) scale(.96);}30%,60%,90%{transform:translateX(6px) scale(.96);}}
+.cx-foot{flex:0 0 auto;padding:6px 0 calc(10px + env(safe-area-inset-bottom));}
+.cx-mistakes{display:flex;align-items:center;justify-content:center;gap:8px;font-size:.84rem;color:var(--ink-soft);}
+.cx-dot{width:14px;height:14px;border-radius:50%;background:var(--ink-soft);transition:transform .3s var(--ease),opacity .3s;}
+.cx-dot.gone{transform:scale(0);opacity:0;}
+.cx-controls{display:flex;gap:8px;justify-content:center;margin-top:12px;}
+.cx-btn{padding:11px 16px;border-radius:999px;border:1px solid var(--ink);font-size:.83rem;font-weight:600;
+  transition:background .18s,color .18s,opacity .18s,transform .15s;}
+.cx-btn:active{transform:scale(.96);}
+.cx-btn:disabled{opacity:.32;cursor:default;}
+.cx-btn.solid{background:var(--ink);color:var(--paper);}
+.cx-share{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:1.3rem;line-height:1.35;
+  text-align:center;letter-spacing:2px;margin:12px 0 4px;}
+
+/* ===== 8. STRANDS ========================================================= */
+#view-st .gpad{max-width:460px;}
+.st-clue{flex:0 0 auto;border:1px solid var(--ink);border-radius:8px;padding:10px 14px;text-align:center;margin:8px 0 6px;}
+.st-clue .kicker{font-size:.6rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);}
+.st-clue .theme{font-family:var(--font-display);font-size:1.15rem;font-weight:700;margin-top:2px;}
+.st-progress{flex:0 0 auto;font-size:.82rem;text-align:center;color:var(--ink-soft);}
+.st-progress b{color:var(--ink);}
+.st-boardwrap{position:relative;touch-action:none;user-select:none;-webkit-user-select:none;}
+.st-lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;}
+.st-board{position:relative;z-index:2;display:grid;grid-template-columns:repeat(6,1fr);gap:2px;}
+.st-cell{aspect-ratio:1;display:grid;place-items:center;position:relative;font-weight:700;text-transform:uppercase;}
+.st-cell::before{content:'';position:absolute;width:84%;aspect-ratio:1;border-radius:50%;
+  background:transparent;transform:scale(.6);opacity:0;
+  transition:background .2s var(--ease),transform .22s var(--ease),opacity .22s var(--ease);}
+.st-cell span{position:relative;z-index:1;}
+.st-cell.active::before{background:var(--st-active);transform:scale(1);opacity:1;}
+.st-cell.hinted::before{background:var(--st-hint);transform:scale(1);opacity:1;animation:hintPulse 1.5s ease-in-out infinite;}
+@keyframes hintPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.09);}}
+.st-cell.found::before{background:var(--st-theme);transform:scale(1);opacity:1;}
+.st-cell.span::before{background:var(--st-span);transform:scale(1);opacity:1;}
+.st-cell.pop{animation:stPop .34s var(--ease);}
+@keyframes stPop{0%{transform:scale(1);}45%{transform:scale(1.22);}100%{transform:scale(1);}}
+.st-cell.nudge{animation:stNudge .42s;}
+@keyframes stNudge{0%,100%{transform:translateX(0);}25%{transform:translateX(-5px);}75%{transform:translateX(5px);}}
+.st-cell .order{position:absolute;top:-1px;right:2px;font-size:.5em;font-weight:800;color:var(--ink-soft);z-index:2;}
+.st-foot{flex:0 0 auto;display:flex;justify-content:center;padding:8px 0 calc(12px + env(safe-area-inset-bottom));}
+.st-hintbtn{padding:11px 20px;border-radius:999px;border:1px solid var(--ink);font-size:.84rem;
+  font-weight:600;position:relative;overflow:hidden;transition:opacity .2s,transform .15s;}
+.st-hintbtn:disabled{opacity:.4;cursor:default;}
+.st-hintbtn:active{transform:scale(.96);}
+.st-hintbtn .fill{position:absolute;inset:0;background:var(--st-theme);width:0%;transition:width .45s var(--ease);z-index:0;}
+.st-hintbtn .lbl{position:relative;z-index:1;}
+
+@media (prefers-color-scheme: dark){
+  html,body{background-color:#FFF;color:var(--ink);}
+  .page-bg,.app,.topbar,.sheet,.menu,.kb button,.lb-form input,.xw-cell{background-color:var(--paper);}
+  .xw-cell.block{background-color:var(--xw-block);}
+  .kb{background-color:var(--paper-warm);}
+  .cx-tile{background-color:var(--cx-tile);}
+  .cx-tile.sel{background-color:var(--cx-selected);color:var(--paper);}
+  .toast{background-color:var(--ink);color:var(--paper);}
+  #splash{background-color:var(--splash);}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;}
+}
+
+</style>
 </head>
 <body>
+
+<!-- ===== 9. MARKUP ======================================================== -->
+<div class="page-bg" aria-hidden="true"></div>
+
+<div id="splash">
+  <div class="splash-couple">Bernadette &amp; Mark</div>
+  <div class="splash-word">Games</div>
+  <div class="splash-line" id="splash-line">Chilling the champagne<span class="splash-dots">…</span></div>
+</div>
+
+<div class="app">
+
+  <header class="topbar">
+    <button class="icon-btn" id="btn-home" aria-label="Back" hidden>
+      <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <div class="topbar-title" id="topbar-title">Games<small>Bernadette &amp; Mark</small></div>
+    <button class="icon-btn" id="btn-board" aria-label="Leaderboard" hidden>
+      <svg viewBox="0 0 24 24"><path d="M8 4h8v4.5a4 4 0 01-8 0z"/><path d="M8 5.5H5V7a3 3 0 003 3M16 5.5h3V7a3 3 0 01-3 3"/><path d="M12 12.5V16M9 19.5h6M10.5 16h3"/></svg>
+    </button>
+    <button class="icon-btn" id="btn-help" aria-label="How to play" hidden>
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.5 2.5 0 114 2.3c-.9.6-1.6 1-1.6 2.1"/><circle cx="12" cy="17.2" r=".6" fill="currentColor"/></svg>
+    </button>
+  </header>
+
+  <!-- ---------- LANDING ---------- -->
+  <div class="view scrolls active" id="view-hub">
+    <div class="hub">
+      <div class="hub-mast">
+        <div class="couple">Bernadette &amp; Mark · <span id="hub-date">16–17 January 2027</span></div>
+        <h1>A little something while you wait</h1>
+        <p class="hub-sub">If there&rsquo;s one thing about us, we love a good game. Get to know us better and see where you land on the leaderboard!</p>
+      </div>
+
+      <div class="gcard-group g-blue">
+        <div class="gcard">
+          <div class="glyph xw"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <h2>The Midi</h2>
+          <p>A small grid with a long memory. Mostly about us.</p>
+          <div class="foot"><span class="n">Three levels</span><span class="by">By Mark, mostly</span></div>
+        </div>
+        <div class="levels" data-game="xw">
+          <button data-level="0">Easy</button>
+          <button data-level="1">Medium</button>
+          <button data-level="2">Hard</button>
+        </div>
+      </div>
+
+      <div class="gcard-group g-purple">
+        <div class="gcard">
+          <div class="glyph cx"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <h2>Connections</h2>
+          <p>Group words that share a common thread. Ours share an in-joke.</p>
+          <div class="foot"><span class="n">Three levels</span><span class="by">By Bernadette</span></div>
+        </div>
+        <div class="levels" data-game="cx">
+          <button data-level="0">Easy</button>
+          <button data-level="1">Medium</button>
+          <button data-level="2">Hard</button>
+        </div>
+      </div>
+
+      <div class="gcard-group g-mint">
+        <div class="gcard">
+          <svg class="glyph st" viewBox="0 0 60 60" aria-hidden="true">
+            <g fill="none" stroke="#121212" stroke-width="15" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M13 47 L23 15 L34 47"/>
+              <path d="M34 47 L45 15"/>
+            </g>
+            <path d="M13 47 L23 15 L34 47" fill="none" stroke="var(--st-theme)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M34 47 L45 15" fill="none" stroke="var(--st-span)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+            <g fill="#FFFFFF" stroke="#121212" stroke-width="2.6">
+              <circle cx="13" cy="47" r="5.4"/>
+              <circle cx="23" cy="15" r="5.4"/>
+              <circle cx="34" cy="47" r="5.4"/>
+              <circle cx="45" cy="15" r="5.4"/>
+            </g>
+          </svg>
+          <h2>Strands</h2>
+          <p>Find the hidden words and uncover the theme. The theme is always us.</p>
+          <div class="foot"><span class="n">Three levels</span><span class="by">By the happy couple</span></div>
+        </div>
+        <div class="levels" data-game="st">
+          <button data-level="0">Easy</button>
+          <button data-level="1">Medium</button>
+          <button data-level="2">Hard</button>
+        </div>
+      </div>
+
+      <div class="gcard-group g-grey">
+        <button class="gcard wide-link" id="go-boards">
+          <div>
+            <h2>Leaderboard</h2>
+            <p>Nine boards. Find out who's been quietly practising.</p>
+          </div>
+          <span class="arrow">→</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- LEADERBOARD PAGE ---------- -->
+  <div class="view scrolls" id="view-board">
+    <div class="boards">
+      <p class="boards-intro">Three fastest times on each board. Every hint adds five seconds, and revealing answers keeps a run off the board entirely.</p>
+      <div id="boards-mount"></div>
+    </div>
+  </div>
+
+  <!-- ---------- CROSSWORD ---------- -->
+  <div class="gameview" id="view-xw">
+    <div class="gpad">
+      <div class="gbar">
+        <span class="lvl" id="xw-lvl">Easy</span>
+        <button class="icon-btn" id="xw-playpause" aria-label="Pause timer">
+          <svg viewBox="0 0 24 24"><rect x="8" y="6" width="3" height="12" rx="1"/><rect x="14" y="6" width="3" height="12" rx="1"/></svg>
+        </button>
+        <span class="clockread"><span id="xw-timer">0:00</span><span class="pen" id="xw-pen"></span></span>
+        <span class="spacer"></span>
+        <div class="menu-wrap">
+          <button class="pill ghost" id="xw-check-btn">Check</button>
+          <div class="menu" id="xw-check-menu">
+            <button data-check="square">Check square</button>
+            <button data-check="word">Check word</button>
+            <button data-check="puzzle">Check puzzle</button>
+          </div>
+        </div>
+        <div class="menu-wrap">
+          <button class="pill ghost" id="xw-reveal-btn">Reveal</button>
+          <div class="menu" id="xw-reveal-menu">
+            <button data-reveal="square">Reveal square</button>
+            <button data-reveal="word">Reveal word</button>
+            <button data-reveal="puzzle">Reveal puzzle</button>
+            <hr>
+            <button data-reveal="clear">Start over</button>
+          </div>
+        </div>
+      </div>
+      <div class="xw-body">
+        <div class="xw-left">
+          <div class="fitarea" id="xw-fit">
+            <div class="xw-grid" id="xw-grid"></div>
+            <div class="xw-pause" id="xw-pause">
+              <p style="font-size:.9rem;color:var(--ink-soft)">Your puzzle is paused</p>
+              <button class="pill" id="xw-resume">Resume</button>
+            </div>
+          </div>
+          <div class="xw-cluebar">
+            <button class="arrow" id="xw-prev" aria-label="Previous clue"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+            <div class="text" id="xw-cluetext"></div>
+            <button class="arrow" id="xw-next" aria-label="Next clue"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+          </div>
+        </div>
+        <div class="xw-lists">
+          <div class="xw-clue-col"><h4>Across</h4><ol id="xw-across"></ol></div>
+          <div class="xw-clue-col"><h4>Down</h4><ol id="xw-down"></ol></div>
+        </div>
+      </div>
+    </div>
+    <div class="kb" id="xw-keyboard"></div>
+  </div>
+
+  <!-- ---------- CONNECTIONS ---------- -->
+  <div class="gameview" id="view-cx">
+    <div class="gpad">
+      <div class="gbar">
+        <span class="lvl" id="cx-lvl">Easy</span>
+        <span class="clockread"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9.5V13l2.2 1.4M9.5 3h5"/></svg><span id="cx-timer">0:00</span><span class="pen" id="cx-pen"></span></span>
+        <span class="spacer"></span>
+      </div>
+      <p class="cx-prompt">Create four groups of four!</p>
+      <div class="cx-board">
+        <div class="cx-solved-wrap" id="cx-solved"></div>
+        <div class="cx-grid" id="cx-grid"></div>
+      </div>
+      <div class="cx-foot">
+        <div class="cx-mistakes"><span>Mistakes remaining:</span><span id="cx-dots" style="display:flex;gap:8px"></span></div>
+        <div class="cx-controls">
+          <button class="cx-btn" id="cx-shuffle">Shuffle</button>
+          <button class="cx-btn" id="cx-deselect" disabled>Deselect all</button>
+          <button class="cx-btn solid" id="cx-submit" disabled>Submit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- STRANDS ---------- -->
+  <div class="gameview" id="view-st">
+    <div class="gpad">
+      <div class="gbar">
+        <span class="lvl" id="st-lvl">Easy</span>
+        <span class="clockread"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9.5V13l2.2 1.4M9.5 3h5"/></svg><span id="st-timer">0:00</span><span class="pen" id="st-pen"></span></span>
+        <span class="spacer"></span>
+      </div>
+      <div class="st-clue">
+        <div class="kicker">Today's theme</div>
+        <div class="theme" id="st-theme">—</div>
+      </div>
+      <p class="st-progress" id="st-progress"><b>0</b> of 7 theme words found.</p>
+      <div class="fitarea" id="st-fit">
+        <div class="st-boardwrap" id="st-boardwrap">
+          <svg class="st-lines" id="st-lines" preserveAspectRatio="none"></svg>
+          <div class="st-board" id="st-board"></div>
+        </div>
+      </div>
+      <div class="st-foot">
+        <button class="st-hintbtn" id="st-hint" disabled><span class="fill" id="st-hintfill"></span><span class="lbl">Hint</span></button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast-rail" id="toast-rail"></div>
+<div class="confetti-layer" id="confetti-layer"></div>
+
+<div class="scrim" id="scrim">
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true">
+    <button class="icon-btn close" id="sheet-close" aria-label="Close">
+      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <div id="sheet-body"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ============================================================================
+   10. DATA — the only part you need to touch to change the puzzles.
+   ----------------------------------------------------------------------------
+   Every game has exactly three entries, in order: easy, medium, hard.
+   CROSSWORD    grid: N strings of N characters, "#" = black square. Clue keys
+                are "A<number>" / "D<number>"; numbering is derived from the
+                grid, so a missing clue simply shows as "—".
+   CONNECTIONS  groups run easiest (yellow) to hardest (purple).
+   STRANDS      each word lists the path its letters take, as [row, col] pairs.
+                `extras` are ordinary words hidden in the same board; three of
+                them earns a hint.
+   ========================================================================== */
+
+const CONFIG = {
+  coupleNames : 'Bernadette & Mark',
+  weddingDate : '16–17 January 2027',
+  shareTag    : 'B&M Connections',
+  splashMs    : 2000,          // how long the yellow screen holds
+  scoring: {
+    keepTop        : 3,        // times remembered per board
+    hintPenalty    : 5,        // seconds per Strands hint / crossword Check
+    mistakePenalty : 0,        // seconds per Connections mistake (0 = free)
+    revealVoids    : true      // Reveal keeps a crossword run off the board
+  },
+  // Shown one at a time on the loading screen.
+  splashLines: [
+    'Chilling the champagne',
+    'Alphabetising the seating chart',
+    'Losing the rings, finding the rings',
+    'Steaming the suit',
+    'Chasing down the last RSVP',
+    'Rehearsing the first dance',
+    'Hiding the cake from Mark',
+    'Renegotiating the guest list',
+    'Adding one more table, just in case',
+    'Asking the uncles to sit down'
+  ]
+};
+
+const LEVELS = ['Easy', 'Medium', 'Hard'];
+const DATA = {};
+
+DATA.crossword = [
+  {
+    id:'xw-easy', label:'Easy',
+    grid:['##WEB','#FIVE','RUPEE','USER#','BED##'],
+    clues:{
+      A1:'Spider\'s work',            A4:'Number of people in the wedding party',
+      A5:'Currency of India',         A6:'Person on an app',
+      A7:'Where you\'ll want to be by 11pm',
+      D1:'Cleaned, as a whiteboard',  D2:'Always',
+      D3:'Honey maker',               D4:'Blow one, and the lights go out',
+      D5:'Massage gently'
+    }
+  },
+  {
+    id:'xw-medium', label:'Medium',
+    grid:['SAW#DAY','PIE#IRE','ADDICTS','##DOT##','SPINACH','URN#TOE','BOG#EON'],
+    clues:{
+      A1:'Cut with a toothed blade',       A4:'Twenty-four hours',
+      A7:'Dessert with a crust',           A8:'Righteous anger',
+      A9:'Can\'t-stop-won\'t-stop types',  A11:'Full stop, to a Brit',
+      A12:'Popeye\'s power source',        A16:'Vase for ashes',
+      A17:'Casualty of a stubbed foot',    A18:'Wetland',
+      A19:'A very long stretch of time',
+      D1:'Where you go to be pummelled, pleasantly',
+      D2:'Lend a hand',                    D3:'What we\'re throwing in January',
+      D4:'Lay down the law',               D5:'What hangs in a gallery',
+      D6:'The answer we\'re hoping for on the RSVP',
+      D10:'Charged particle',              D12:'Sandwich, or a boat',
+      D13:'Not an amateur',                D14:'Sound a dove makes',
+      D15:'Layer of eggs'
+    }
+  },
+  {
+    id:'xw-hard', label:'Hard',
+    grid:['CAN#FEW','AGE#OWE','POWERED','##BOG##','PHONING','OUR#VIE','TEN#ELM'],
+    clues:{
+      A1:'Tin, or the ability to',          A4:'Not many, and the seating plan thanks you',
+      A7:'It comes with wisdom, allegedly', A8:'Be in the red to',
+      A9:'Running on batteries',            A11:'Where you get stuck, or bogged',
+      A12:'Ringing, and not the church kind',
+      A16:'Belonging to the two of us',     A17:'Compete',
+      A18:'What a bride counts to before the aisle',
+      A19:'Tree on many an American main street',
+      D1:'Top of a bottle, or a graduate\'s throw',
+      D2:'Water under the bridge, time-wise',
+      D3:'Fresh arrival — the reason half our friends may send apologies',
+      D4:'What you\'ll do about the seating, eventually',
+      D5:'She\'s got a lamb somewhere',      D6:'What we\'re doing, in three letters',
+      D10:'An age, or a particle',           D12:'It gets a watched one that never boils',
+      D13:'Shade, or the colour itself',     D14:'Score at the start of a match',
+      D15:'It\'s on the fourth finger'
+    }
+  }
+];
+
+DATA.connections = [
+  {
+    id:'cx-easy', label:'Easy',
+    groups:[
+      {name:'Seen at a wedding',   level:0, words:['CAKE','RINGS','VOWS','SPEECH']},
+      {name:'Tropical fruit',      level:1, words:['MANGO','PAPAYA','LYCHEE','DURIAN']},
+      {name:'Soft colours',        level:2, words:['BLUSH','OLIVE','IVORY','CORAL']},
+      {name:'Kinds of shoe',       level:3, words:['HEEL','LOAFER','SANDAL','SNEAKER']}
+    ]
+  },
+  {
+    id:'cx-medium', label:'Medium',
+    groups:[
+      {name:'Seen inside a church',  level:0, words:['PEW','ALTAR','AISLE','HYMN']},
+      {name:'Thrown at newlyweds',   level:1, words:['RICE','CONFETTI','PETALS','BOUQUET']},
+      {name:'Classic cocktails',     level:2, words:['NEGRONI','MARTINI','MOJITO','SIDECAR']},
+      {name:'___ cake',              level:3, words:['CUP','CHEESE','CARROT','SPONGE']}
+    ]
+  },
+  {
+    id:'cx-hard', label:'Hard',
+    groups:[
+      {name:'Anniversary gifts', level:0, words:['PEARL','GOLD','DIAMOND','SILVER']},
+      {name:'___ ring',          level:1, words:['BOXING','ONION','KEY','MOOD']},
+      {name:'Kinds of knot',     level:2, words:['REEF','BOW','SLIP','WINDSOR']},
+      {name:'Best ___',          level:3, words:['MAN','FRIEND','WISHES','SELLER']}
+    ]
+  }
+];
+
+DATA.strands = [
+  {
+    id: 'st-easy', label: 'Easy', level: 'easy',
+    theme: "Tie the knot",
+    spangram: 'JUSTMARRIED',
+    grid: ['CHPCJU', 'BALEAS', 'OBRKDT', 'UUEIME', 'EQFIRA', 'TTTRRS', 'OSICNT', 'AEDEDA'],
+    words: {
+      CHAPEL: [[0,0],[0,1],[1,1],[0,2],[1,3],[1,2]],
+      CAKE: [[0,3],[1,4],[2,3],[3,2]],
+      JUSTMARRIED: [[0,4],[0,5],[1,5],[2,5],[3,4],[4,5],[5,4],[5,3],[6,2],[7,1],[7,2]],
+      BOUQUET: [[1,0],[2,0],[3,1],[4,1],[3,0],[4,0],[5,1]],
+      BRIDE: [[2,1],[2,2],[3,3],[2,4],[3,5]],
+      FIRSTDANCE: [[4,2],[4,3],[4,4],[5,5],[6,5],[7,4],[7,5],[6,4],[6,3],[7,3]],
+      TOAST: [[5,0],[6,0],[7,0],[6,1],[5,2]],
+    },
+    extras: [
+      'ABLE','ABREAST','ACED','ADIEU','ADMIRAL','ADMIRE','ADMIT','ADMITS','ALBEIT','ALEC',
+      'AMID','AMIDST','AMIR','ANTS','AREA','AREAS','ARID','ARMED','ARTS','ASIDE','ASTRID',
+      'ASTRIDE','BABE','BACH','BALE','BALK','BALKED','BARB','BARBEQUE','BARE','BARED','BARI',
+      'BARK','BARKED','BEFIT','BEFITS','BEFRIEND','BERK','BLAB','BLAH','BLARE','BLEAK',
+      'BLEAT','BLEATS','BLED','BOAR','BOUQUETS','BREAD','BREADS','BREAK','BREAST','BREASTED',
+      'BRED','BRIE','BRIEF','BRIM','BUREAU','BUREAUS','BURKA','BURKE','BURLAP','CABLE',
+      'CABLED','CADE','CADET','CADETS','CAKED','CAPE','CAPED','CAPER','CARE','CARED','CARL',
+      'CAST','CASTE','CASTER','CATER','CATERS','CATS','CEDE','CENT','CENTS','CHALK','CHALKED',
+      'CHAP','CHAR','CITE','CLAP','CLARE','CLARK','CLARKE','CLEATS','CLERK','CRAM','CRIED',
+      'CRIER','CRIES','CRIME','DANCE','DANCED','DANE','DATE','DEAR','DEARIE','DEARS','DECIDE',
+      'DECIDES','DECLARE','DENS','DENT','DENTS','DEREK','DICE','DICED','DIED','DIKE','DIME',
+      'DIRE','DIRK','DIRT','DIRTIER','DITTO','EARN','EARNED','EARNS','EARS','EAST','EASTER',
+      'EATER','EATERS','EATS','EDEMA','EDEN','EDICT','EDICTS','EDIT','EDITS','EDNA','EMIR',
+      'EMIT','EMITS','ERAS','ERIK','ERIKA','ESTE','EUREKA','FERAL','FIDEL','FIRE','FIRED',
+      'FIRM','FIRS','FIRST','FITS','FRIED','FRIEND','FRIES','HALE','HARE','HARK','ICED',
+      'IDEA','IDEAS','IDES','IRIS','IRKED','JADE','JAKE','JEDI','JERK','JUST','KATE','KEBAB',
+      'KELP','KIDS','LARK','LEAD','LEADER','LEADERS','LEADS','LEAK','LEAST','MARC','MARE',
+      'MARI','MARIE','MARRED','MARRIED','MARRIES','MARS','MART','MARTA','MAST','MERIT',
+      'MERITS','MERRIER','META','MIDAS','MIDST','MIKE','MIRA','MIRE','MIRED','MITT','MITTS',
+      'OTIS','PALE','PALER','PARE','PARED','PARK','PARKA','PARKED','PEAK','PEAS','PEAT',
+      'PERK','PERU','PLEA','PLEAD','PLEADS','PLEAS','PLEATED','PLEATS','PLED','QUEUE',
+      'RABBLE','RALPH','RAPED','RARE','READ','READER','READERS','READS','REAM','REAR','REARS',
+      'RECAST','REDS','REFIT','REID','REMIT','RETAKE','RICE','RIDE','RIDER','RIDERS','RIDES',
+      'RIFE','RIFT','RIFTS','RISE','RITE','RUBE','RUBLE','SADIE','SAKE','SAKI','SAME','SARI',
+      'SATE','SATED','SIDE','SIDED','SITE','STAKE','STAKED','STAN','STANCE','STAND','STEAM',
+      'STEM','STIR','STIRRED','STIRS','STRIDE','STRIDENT','STRIFE','TAEL','TAKE','TAKER',
+      'TANS','TEAM','TEAR','TEARS','TEAS','TERI','TERM','TERRA','TERRI','TERRIER','TIDE',
+      'TIDES','TIED','TIER','TIES','TIME','TIMED','TIMER','TIMERS','TIMID','TIRE','TIRED',
+      'TITO','TITS','TOED','TOES','TOTE','TOTS','TRAM','TRIDENT','TRIED','TRIES','TRIM',
+      'TRITE','TSAR',
+    ]
+  },
+  {
+    id: 'st-medium', label: 'Medium', level: 'medium',
+    theme: "A very Singapore affair",
+    spangram: 'LIONCITY',
+    grid: ['KAOHCS', 'AYARAH', 'PWYATA', 'AKRDRD', 'DEUGLI', 'YANRNO', 'MTICIA', 'ARINAN'],
+    words: {
+      KAYA: [[0,0],[1,0],[1,1],[0,1]],
+      ORCHARD: [[0,2],[1,3],[0,4],[1,5],[2,5],[3,4],[3,5]],
+      HAWKER: [[0,3],[1,2],[2,1],[3,1],[4,1],[3,2]],
+      SATAY: [[0,5],[1,4],[2,4],[2,3],[2,2]],
+      PADANG: [[2,0],[3,0],[4,0],[5,1],[5,2],[4,3]],
+      DURIAN: [[3,3],[4,2],[5,3],[6,4],[6,5],[7,5]],
+      LIONCITY: [[4,4],[4,5],[5,5],[5,4],[6,3],[7,2],[6,1],[5,0]],
+      MARINA: [[6,0],[7,0],[7,1],[6,2],[7,3],[7,4]],
+    },
+    extras: [
+      'ACING','ACNE','ADAM','AHOY','AIRING','ANGRY','ANITA','ANTI','ANTIC','AORTA','ARCH',
+      'ARCS','AREA','ARENA','ARGUE','ARGUED','ARIA','ARID','ARMADA','ARMY','ARTY','ASHTRAY',
+      'ATARI','AUDREY','AUNT','AUNTY','AURA','AWAKE','AWAKEN','AWAY','AWRY','AYAH','CAIN',
+      'CANINE','CANING','CARA','CARAT','CART','CARY','CASH','CATH','CHAD','CHAR','CHARD',
+      'CHART','CHAT','CHAW','CIAO','CINE','CITING','CITY','CRADLING','CRASH','CRAW','CRAY',
+      'CROAK','CRUD','DAINTY','DANCING','DANE','DANG','DARE','DARED','DARING','DARK','DARKEN',
+      'DARLING','DART','DARTH','DATA','DATING','DEAN','DENT','DING','DINO','DION','DIRT',
+      'DREAD','DREAM','DREAMY','DRUG','DUANE','DUKE','DUNCAN','DUNE','DUNG','DURING','DYKE',
+      'EATING','ENTICING','GNAT','GRAD','GRADY','GRAY','GREAT','GREY','GRID','GRIN','GRIT',
+      'GRUNT','GUAN','GURNEY','HARD','HARDING','HARDY','HART','HASH','HATH','HAWK','HORA',
+      'ICING','INCAN','INCITING','INGRID','IONIAN','IONIC','KENT','LINA','LINO','LION','LIRA',
+      'LOAN','LOANING','LOIN','LONG','MADE','MAIN','MAINE','MANE','MANI','MANIC','MANTA',
+      'MANTRA','MANURE','MARI','MARIA','MARIAN','MARIN','MARINADE','MARINE','MARINER','MART',
+      'MARTA','MARTIAN','MARTIN','MARTINI','MARTY','MATING','MAUDLIN','NAAN','NEAT','NERD',
+      'NERDY','NINA','NINE','NITRIC','NUKE','NUKED','ORCA','ORCAS','RADIO','RADIOING','RAMA',
+      'RARE','RARING','RASH','RATING','READ','READY','REAM','REAP','RENT','RING','RITA',
+      'RUDY','RUNE','RUNG','RUNT','SARA','SARAH','SCAR','SCARY','SCAT','SHADING','SHAH',
+      'SHARD','SHARING','SHAT','TACH','TANG','TARA','TARDY','TARO','TASHA','THAR','TINA',
+      'TINE','TING','TIRING','TRADING','TRAM','TRASH','TRAY','TRIAD','TRICIA','TRINA','TRIO',
+      'TROY','UNIT','UNITY','UNTIRING','URIC','URINE','WADE','WAKE','WAKED','WAKEN','WART',
+      'WARY','WRATH','WREAK','WREN','WRUNG','YANG','YARD',
+    ]
+  },
+  {
+    id: 'st-hard', label: 'Hard', level: 'hard',
+    theme: "Wheels up",
+    spangram: 'HONEYMOON',
+    grid: ['BSHPVP', 'NECOOI', 'OATSLO', 'RRCCLL', 'EKRARA', 'EEDUIS', 'LHFMEO', 'ONEYON'],
+    words: {
+      BEACH: [[0,0],[1,1],[2,1],[1,2],[0,2]],
+      SNORKEL: [[0,1],[1,0],[2,0],[3,0],[4,1],[5,0],[6,0]],
+      POSTCARD: [[0,3],[1,3],[2,3],[2,2],[3,2],[4,3],[4,2],[5,2]],
+      VILLA: [[0,4],[1,5],[2,4],[3,4],[4,5]],
+      POOL: [[0,5],[1,4],[2,5],[3,5]],
+      REEF: [[3,1],[4,0],[5,1],[6,2]],
+      CRUISE: [[3,3],[4,4],[5,3],[5,4],[5,5],[6,4]],
+      HONEYMOON: [[6,1],[7,0],[7,1],[7,2],[7,3],[6,3],[7,4],[6,5],[7,5]],
+    },
+    extras: [
+      'ACCLAIM','ACCRUE','ACES','ACHE','ACHES','ACRE','ACTS','ADELE','ADMIRAL','ADMIRALS',
+      'AIRS','ALAI','ALAS','ALLOCATE','ALLOT','ALSO','ARCADE','ARCANE','ARCS','ARIA','ARIES',
+      'ARISE','ARISEN','ARSON','ARTS','ASIA','ATOLL','ATOP','AURA','AURAL','AURAS','BEAN',
+      'BEANS','BEAR','BEARER','BEAT','BEATS','BETA','BETS','CACAO','CACHE','CACHES','CADE',
+      'CADRE','CALL','CALLA','CALLS','CANE','CANES','CANOE','CANOES','CANS','CARA','CARD',
+      'CARE','CARED','CAREER','CARER','CARL','CARLA','CARLO','CARS','CARSON','CART','CARTE',
+      'CARTS','CATCH','CATCHES','CATS','CHEAT','CHEATS','CHEN','CHOP','CLACK','CLAD','CLAIM',
+      'CLARA','CLARE','CLARION','CLARK','CLARKE','CLAUDE','CLIP','CLOP','CLOT','CLOTS',
+      'COLLAR','COLLARD','COLLARED','COLLARS','COOL','COOLS','COOP','COOS','COST','COSTA',
+      'COSTAR','COTS','CRACK','CRACKED','CRACKER','CRANE','CRANES','CRATE','CRATES','CRED',
+      'CREED','CREEK','CRIES','CRIME','CRIMES','CRONE','CRORE','CRUD','CRUDE','DAIMYO','DAIS',
+      'DALLAS','DARE','DARK','DARKER','DEER','DEFY','DRUM','DUAL','DUES','EACH','EATS','ECHO',
+      'EMIR','ENACT','EONS','ERRED','ERROR','ETCH','EYES','FEEL','FELON','FEMUR','FERAL',
+      'FUME','FUMES','FURIES','FURS','HEAR','HEART','HEARTS','HEAT','HEATS','HECTARE','HEED',
+      'HEEL','HENS','HERA','HERD','HERR','HOLE','HOLED','HONE','HONEY','HOOP','HOST','HOTS',
+      'ILLS','KEEL','KEELED','LACK','LACKED','LAIR','LAIRS','LALA','LARA','LARD','LARK',
+      'LARS','LAUD','LAURA','LAUREL','LAURIE','LEEK','LEER','LOCATE','LOCATES','LOLA',
+      'LOLLIPOP','LONE','LOOP','LOOS','LOOT','LOST','LOTS','MESA','MIRA','MISO','MONEY',
+      'MONO','MOON','MOOS','MOOSE','MURAL','MURALS','MURK','NACHO','NACHOS','NARC','NARCS',
+      'NARKED','NATE','NEAR','NEARER','NEAT','NECTAR','NETS','NEURAL','NOISE','NOME','NOMEN',
+      'NOOSE','NORA','NOSE','NOSEY','OATES','OATS','OCEAN','OCEANS','OCTANE','OILS','OMEN',
+      'ONES','ONSET','ORCA','OSCAR','OSCARS','PILL','PILLAR','PILLARS','PILLS','PILOT',
+      'PILOTS','PIVOT','POLIO','POLL','POLLACK','POLLS','POLO','POOCH','POOH','POOLS','POOP',
+      'POST','POTS','RACE','RACES','RACK','RACKED','RAISE','RARE','RATE','RATES','RATS',
+      'REDACT','REED','REEK','REEKED','REEL','REELED','RIOS','RISE','RISEN','ROACH','ROACHES',
+      'ROAN','ROAR','RUDE','RUDER','RURAL','SALAD','SALADE','SARA','SARI','SCALAR','SCALLOP',
+      'SCAN','SCANS','SCAR','SCARE','SCARED','SCARRED','SCARS','SCAT','SCHOOL','SCHOOLS',
+      'SCOOP','SCOT','SCOTS','SCRATCH','SCRUM','SEAN','SEAR','SEAT','SEATS','SECT','SECTS',
+      'SEMI','SENOR','SENORA','SETS','SHEA','SHEAR','SHOO','SHOP','SHOT','SHOTS','SIMON',
+      'SIMONE','SLACK','SLACKER','SLIP','SLOOP','SLOP','SLOT','SNACK','SNARE','SNATCH',
+      'SNORE','SNORT','SNORTS','SOIL','SOLO','SONE','SOON','SOOT','STACK','STACKED','STAN',
+      'STANS','STAR','STARE','STARK','STARRED','STENO','STOOL','STOOP','STOP','TACH','TACK',
+      'TACKED','TACO','TACOS','TANS','TARO','TARRED','TEACH','TEAR','TECHS','TENOR','TENS',
+      'TOLL','TOLLS','TOOL','TOOLS','TRACE','TRACES','TRACK','TRACKED','TRACKER','TREE',
+      'TREED','TREK','URALS','VILLAS','VIOLA','VOTE','VOTES','YEMEN',
+    ]
+  }
+];
+
+/* ============================================================================
+   11. ENGINE
+   ========================================================================== */
+
+const $  = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const fmt = s => Math.floor(s / 60) + ':' + String(Math.round(s) % 60).padStart(2, '0');
+
+// localStorage isn't available in every embed context, so fall back to memory.
+const store = (() => {
+  try { localStorage.setItem('__probe','1'); localStorage.removeItem('__probe'); return localStorage; }
+  catch (e) { const mem = {}; return { getItem:k => (k in mem ? mem[k] : null), setItem:(k,v) => { mem[k] = String(v); }, removeItem:k => { delete mem[k]; } }; }
+})();
+const save = (key, obj) => { try { store.setItem('bm-games:' + key, JSON.stringify(obj)); } catch (e) {} };
+const load = key => { try { return JSON.parse(store.getItem('bm-games:' + key) || 'null'); } catch (e) { return null; } };
+
+function toast(msg, ms){
+  const t = el('div','toast',msg);
+  t.style.animationDelay = '0s,' + ((ms || 1800) / 1000 - .3) + 's';
+  $('#toast-rail').appendChild(t);
+  setTimeout(() => t.remove(), (ms || 1800) + 200);
+}
+
+function confetti(){
+  const layer = $('#confetti-layer');
+  const colours = ['#7C90DF','#B3A5F5','#BCDDD1','#FFDA00','#F9DF6D','#121212'];
+  for (let i = 0; i < 70; i++){
+    const c = el('div','confetti');
+    c.style.left = Math.random() * 100 + '%';
+    c.style.background = colours[i % colours.length];
+    c.style.setProperty('--dx', (Math.random() * 160 - 80) + 'px');
+    c.style.setProperty('--spin', (Math.random() * 900 + 260) + 'deg');
+    c.style.animationDuration = (1.8 + Math.random() * 1.6) + 's';
+    c.style.animationDelay = (Math.random() * .5) + 's';
+    if (Math.random() > .6) c.style.borderRadius = '50%';
+    layer.appendChild(c);
+    setTimeout(() => c.remove(), 4200);
+  }
+}
+
+// A clock that starts on the player's first move and ticks only while its own
+// game is on screen and unsolved.
+function makeClock(display, isRunning){
+  const c = {
+    secs:0, started:false, handle:null,
+    reset(){ c.stop(); c.secs = 0; c.started = false; c.paint(); },
+    begin(){ if (c.started) return; c.started = true; c.handle = setInterval(c.step, 1000); },
+    step(){ if (!isRunning()) return; c.secs++; c.paint(); },
+    stop(){ if (c.handle){ clearInterval(c.handle); c.handle = null; } },
+    paint(){ const n = $(display); if (n) n.textContent = fmt(c.secs); }
+  };
+  return c;
+}
+
+/* --- modal ---------------------------------------------------------------- */
+const scrim = $('#scrim');
+function openSheet(html){ $('#sheet-body').innerHTML = html; scrim.classList.add('open'); }
+function closeSheet(){ scrim.classList.remove('open'); }
+$('#sheet-close').addEventListener('click', closeSheet);
+scrim.addEventListener('click', e => { if (e.target === scrim) closeSheet(); });
+document.addEventListener('click', e => { if (e.target.closest('[data-close-sheet]')) closeSheet(); });
+
+/* --- leaderboards --------------------------------------------------------- */
+const GAME_META = {
+  xw: { name:'The Midi',    tone:'g-blue',   list:() => DATA.crossword },
+  cx: { name:'Connections', tone:'g-purple', list:() => DATA.connections },
+  st: { name:'Strands',     tone:'g-mint',   list:() => DATA.strands }
+};
+
+// Scores live in this browser's storage, so each device keeps its own boards.
+// To share them across guests, swap the bodies of `all()` and `add()` for calls
+// to a hosted key-value store and make them async — only `renderBoard` and
+// `resultsSheet` read them. Shape per board: [{ n:name, t:seconds, d:stamp }].
+const Scores = {
+  all(){ return load('lb') || {}; },
+  get(id){ return (Scores.all()[id] || []).slice().sort((a,b) => a.t - b.t).slice(0, CONFIG.scoring.keepTop); },
+  qualifies(id, t){
+    const b = Scores.get(id);
+    return b.length < CONFIG.scoring.keepTop || t < b[b.length - 1].t;
+  },
+  add(id, name, t){
+    const stamp = Date.now();
+    const all = Scores.all();
+    const board = (all[id] || []).concat([{ n:(name || '').trim().slice(0,18) || 'Anonymous', t:t, d:stamp }]);
+    board.sort((a,b) => a.t - b.t);
+    all[id] = board.slice(0, CONFIG.scoring.keepTop);
+    save('lb', all);
+    return stamp;
+  },
+  name(){ return load('player') || ''; },
+  setName(n){ save('player', n); }
+};
+
+function renderBoard(mount, id, highlight){
+  mount.innerHTML = '';
+  const rows = Scores.get(id);
+  if (!rows.length){ mount.appendChild(el('div','lb-empty','No times yet — be the first.')); return; }
+  rows.forEach((r, i) => {
+    const row = el('div','lb-row r' + (i + 1) + (highlight && r.d === highlight ? ' me' : ''));
+    row.appendChild(el('span','lb-rank', String(i + 1)));
+    row.appendChild(el('span','lb-name', r.n));
+    row.appendChild(el('span','lb-time', fmt(r.t)));
+    mount.appendChild(row);
+  });
+}
+
+// The consolidated page: one section per game, difficulty on a segmented
+// control so all nine boards are one tap apart and nothing has to reload.
+function buildBoardsPage(){
+  const mount = $('#boards-mount');
+  mount.innerHTML = '';
+  Object.keys(GAME_META).forEach(game => {
+    const meta = GAME_META[game];
+    const sec = el('section','bsec ' + meta.tone);
+    sec.appendChild(el('h3', null, meta.name));
+    const seg = el('div','seg');
+    const list = el('div');
+    meta.list().forEach((p, i) => {
+      const b = el('button', null, p.label);
+      b.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
+      b.addEventListener('click', () => {
+        $$('button', seg).forEach(x => x.setAttribute('aria-pressed','false'));
+        b.setAttribute('aria-pressed','true');
+        renderBoard(list, game + ':' + p.id);
+      });
+      seg.appendChild(b);
+    });
+    sec.appendChild(seg);
+    sec.appendChild(list);
+    renderBoard(list, game + ':' + meta.list()[0].id);
+    mount.appendChild(sec);
+  });
+}
+
+function openLeaderboard(game, idx){
+  const meta = GAME_META[game], list = meta.list();
+  openSheet('<div class="kicker">Leaderboard</div><h3>' + meta.name + '</h3>'
+    + '<div class="seg" id="lb-tabs"></div><div id="lb-mount"></div>'
+    + '<button class="cta" data-close-sheet>Close</button>');
+  const tabs = $('#lb-tabs');
+  list.forEach((p, i) => {
+    const b = el('button', null, p.label);
+    b.setAttribute('aria-pressed', i === idx ? 'true' : 'false');
+    b.addEventListener('click', () => {
+      $$('button', tabs).forEach(x => x.setAttribute('aria-pressed','false'));
+      b.setAttribute('aria-pressed','true');
+      renderBoard($('#lb-mount'), game + ':' + p.id);
+    });
+    tabs.appendChild(b);
+  });
+  renderBoard($('#lb-mount'), game + ':' + list[idx].id);
+}
+
+// End-of-game sheet: how the time was made up, the board, and a place to sign it.
+function resultsSheet(o){
+  const id = o.game + ':' + o.puzzleId;
+  const total = o.secs + o.penalty;
+  const ranked = !o.unranked;
+  const qualifies = ranked && Scores.qualifies(id, total);
+
+  let html = '<div class="kicker">' + o.kicker + '</div><h3>' + o.title + '</h3>';
+  if (o.blurb) html += '<p>' + o.blurb + '</p>';
+  html += '<div class="score-box">'
+        + '<div class="score-line"><span>Time</span><b>' + fmt(o.secs) + '</b></div>'
+        + (o.penalty ? '<div class="score-line"><span>' + o.penaltyLabel + '</span><b>+' + o.penalty + 's</b></div>' : '')
+        + '<div class="score-line total"><span>Final</span><b>' + (ranked ? fmt(total) : '—') + '</b></div></div>';
+  if (!ranked && o.note) html += '<p class="note">' + o.note + '</p>';
+  html += '<div class="lb-head">' + GAME_META[o.game].name + ' · ' + o.label + '</div><div id="res-lb"></div>';
+  if (qualifies) html += '<div class="lb-form"><input id="lb-name" maxlength="18" placeholder="Your name" autocomplete="name"><button class="pill" id="lb-add">Add time</button></div>';
+  html += '<button class="cta" data-close-sheet>Close</button>';
+
+  openSheet(html);
+  renderBoard($('#res-lb'), id);
+
+  if (qualifies){
+    const input = $('#lb-name'), btn = $('#lb-add'), form = $('.lb-form');
+    input.value = Scores.name();
+    const submit = () => {
+      const nm = input.value.trim() || 'Anonymous';
+      Scores.setName(nm);
+      const stamp = Scores.add(id, nm, total);
+      renderBoard($('#res-lb'), id, stamp);
+      form.replaceWith(el('p','lb-added','Added to the board.'));
+      confetti();
+    };
+    btn.addEventListener('click', submit);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+  }
+}
+
+/* --- how to play ---------------------------------------------------------- */
+const HELP = {
+  xw: `<div class="kicker">How to play</div><h3>The Midi</h3>
+    <p>Fill every white square so the answers match the clues, across and down.</p>
+    <ul>
+      <li>Tap a square to type. Tap it again to switch between across and down.</li>
+      <li>On a keyboard: arrows move, <b>space</b> flips direction, <b>tab</b> jumps to the next clue.</li>
+      <li>Yellow is where your next letter goes; blue is the rest of that answer.</li>
+      <li>The clock starts on your first letter. Each <b>Check</b> costs 5 seconds, and any <b>Reveal</b> keeps the run off the leaderboard.</li>
+    </ul>
+    <button class="cta" data-close-sheet>Got it</button>`,
+
+  cx: `<div class="kicker">How to play</div><h3>Connections</h3>
+    <p>Sort the sixteen words into four groups of four that share something.</p>
+    <ul>
+      <li>Select four, then press <b>Submit</b>. You get four mistakes.</li>
+      <li>Three right out of four and we'll tell you you're <b>one away</b>.</li>
+      <li><b>Shuffle</b> is surprisingly good at breaking a bad hunch.</li>
+      <li>Only a completed board goes on the leaderboard.</li>
+    </ul>
+    <div class="legend-row"><span class="legend-swatch" style="background:var(--cx-yellow)"></span> Yellow — the most straightforward</div>
+    <div class="legend-row"><span class="legend-swatch" style="background:var(--cx-green)"></span> Green</div>
+    <div class="legend-row"><span class="legend-swatch" style="background:var(--cx-blue)"></span> Blue</div>
+    <div class="legend-row"><span class="legend-swatch" style="background:var(--cx-purple)"></span> Purple — wordplay, always trouble</div>
+    <button class="cta" data-close-sheet>Got it</button>`,
+
+  st: `<div class="kicker">How to play</div><h3>Strands</h3>
+    <p>Every letter on the board belongs to exactly one answer, and all of them fit the theme.</p>
+    <ul>
+      <li>Drag across letters to spell a word — or tap them one at a time and tap the last letter again to submit.</li>
+      <li>Letters connect in any direction, diagonals included, and the path can bend.</li>
+      <li>Theme words turn <b style="color:#4a9dc0">blue</b>.</li>
+      <li>One answer is the <b>spangram</b>: it describes the theme and reaches from one side of the board to the other. It turns <b style="color:#c9a400">yellow</b>.</li>
+      <li>Stuck? Find any three ordinary words hiding in the board to earn a hint — each one you spend adds 5 seconds.</li>
+    </ul>
+    <button class="cta" data-close-sheet>Got it</button>`
+};
+
+/* --- router --------------------------------------------------------------- */
+const GAMES = {};                       // filled in by the modules below
+let currentView = 'hub';
+let currentGame = null;
+
+function setTitle(main, sub){
+  $('#topbar-title').innerHTML = main + '<small>' + sub + '</small>';
+}
+
+function show(view){
+  currentView = view;
+  $$('.view, .gameview').forEach(v => v.classList.remove('active'));
+  $('#view-' + view).classList.add('active');
+  const inGame = !!GAMES[view];
+  $('#btn-home').hidden  = (view === 'hub');
+  $('#btn-help').hidden  = !inGame;
+  $('#btn-board').hidden = !inGame;
+  if (view === 'hub')        setTitle('Games', CONFIG.coupleNames);
+  else if (view === 'board') setTitle('Leaderboard', 'Nine boards, three times each');
+  try { window.scrollTo(0, 0); } catch (e) {}
+
+  if (!inGame && GAMES.xw) GAMES.xw.pause(true);
+  if (view === 'board') buildBoardsPage();
+  if (inGame) requestAnimationFrame(() => GAMES[view].fit());
+}
+
+// Entering a game always starts a fresh attempt.
+function openGame(game, levelIdx){
+  currentGame = game;
+  const G = GAMES[game];
+  G.loadPuzzle(levelIdx);
+  setTitle(GAME_META[game].name, LEVELS[levelIdx]);
+  show(game);
+  requestAnimationFrame(() => { G.fit(); requestAnimationFrame(() => G.fit()); });
+}
+
+// Backing out mid-attempt throws the run away, so make sure that's intended.
+function goBack(){
+  const G = GAMES[currentView];
+  if (G && G.inProgress && G.inProgress()){
+    openSheet(`<div class="kicker">Hold on</div><h3>Leave this puzzle?</h3>
+      <p>Your progress and your time will be lost — coming back starts a brand new attempt.</p>
+      <button class="cta danger" id="leave-yes">Leave and lose it</button>
+      <button class="cta secondary" data-close-sheet>Keep playing</button>`);
+    $('#leave-yes').addEventListener('click', () => { closeSheet(); show('hub'); });
+    return;
+  }
+  show('hub');
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (scrim.classList.contains('open')) closeSheet();
+  else if (currentView === 'st') GAMES.st.clearSelection();
+});
+
+$('#btn-home').addEventListener('click', goBack);
+$('#btn-help').addEventListener('click', () => openSheet(HELP[currentView]));
+$('#btn-board').addEventListener('click', () => openLeaderboard(currentView, GAMES[currentView].idx));
+$('#go-boards').addEventListener('click', () => show('board'));
+$$('.levels').forEach(row => {
+  row.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    openGame(row.dataset.game, +b.dataset.level);
+  });
+});
+$('#hub-date').textContent = CONFIG.weddingDate;
+
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => { if (GAMES[currentView]) GAMES[currentView].fit(); }, 80);
+});
+
+/* ---------------------------------------------------------------------------
+   CROSSWORD
+   ------------------------------------------------------------------------- */
+const XW = {
+  size:7, idx:0, puzzle:null, cells:[], entries:[], cur:0, dir:'A',
+  paused:false, solved:false, usedReveal:false, checks:0, penalty:0,
+  clock:null,
+
+  init(){
+    XW.clock = makeClock('#xw-timer', () => currentView === 'xw' && !XW.paused && !XW.solved);
+    XW.buildKeyboard();
+
+    $('#xw-grid').addEventListener('click', e => {
+      const c = e.target.closest('.xw-cell');
+      if (!c || c.classList.contains('block') || XW.paused) return;
+      XW.clock.begin();
+      const i = +c.dataset.i;
+      if (i === XW.cur) XW.setDir(XW.dir === 'A' ? 'D' : 'A');
+      else XW.setCursor(i);
+    });
+
+    $('#xw-prev').addEventListener('click', () => { XW.clock.begin(); XW.stepEntry(-1); });
+    $('#xw-next').addEventListener('click', () => { XW.clock.begin(); XW.stepEntry(1); });
+    $('#xw-playpause').addEventListener('click', () => XW.pause(!XW.paused));
+    $('#xw-resume').addEventListener('click', () => XW.pause(false));
+
+    // Check / Reveal dropdowns
+    const wire = (btn, menu) => {
+      $(btn).addEventListener('click', e => {
+        e.stopPropagation();
+        const m = $(menu), wasOpen = m.classList.contains('open');
+        $$('.menu').forEach(x => x.classList.remove('open'));
+        if (!wasOpen) m.classList.add('open');
+      });
+    };
+    wire('#xw-check-btn', '#xw-check-menu');
+    wire('#xw-reveal-btn', '#xw-reveal-menu');
+    document.addEventListener('click', () => $$('.menu').forEach(m => m.classList.remove('open')));
+    $('#xw-check-menu').addEventListener('click', e => {
+      const b = e.target.closest('[data-check]'); if (!b) return;
+      XW.check(b.dataset.check);
+    });
+    $('#xw-reveal-menu').addEventListener('click', e => {
+      const b = e.target.closest('[data-reveal]'); if (!b) return;
+      if (b.dataset.reveal === 'clear') XW.clearAll(); else XW.reveal(b.dataset.reveal);
+    });
+
+    document.addEventListener('keydown', e => {
+      if (currentView !== 'xw' || scrim.classList.contains('open') || XW.paused) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (/^[a-zA-Z]$/.test(e.key)) { e.preventDefault(); XW.clock.begin(); XW.type(e.key.toUpperCase()); }
+      else if (e.key === 'Backspace') { e.preventDefault(); XW.backspace(); }
+      else if (e.key === ' ') { e.preventDefault(); XW.setDir(XW.dir === 'A' ? 'D' : 'A'); }
+      else if (e.key === 'Tab') { e.preventDefault(); XW.stepEntry(e.shiftKey ? -1 : 1); }
+      else if (e.key.startsWith('Arrow')) { e.preventDefault(); XW.arrow(e.key); }
+    });
+
+    XW.loadPuzzle(0);
+  },
+
+  /* --- build ------------------------------------------------------------- */
+  loadPuzzle(idx){
+    const p = DATA.crossword[idx];
+    XW.idx = idx;
+    $('#xw-lvl').textContent = p.label;
+    XW.puzzle = p; XW.solved = false; XW.usedReveal = false; XW.checks = 0; XW.penalty = 0;
+    const N = XW.size = p.grid.length;
+    XW.cells = []; XW.entries = [];
+
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++){
+      const ch = p.grid[r][c];
+      XW.cells.push({ i:r*N+c, r, c, block:ch === '#', sol:ch, letter:'', num:null, A:null, D:null, revealed:false, wrong:false });
+    }
+    const at = (r,c) => (r<0||c<0||r>=N||c>=N) ? null : XW.cells[r*N+c];
+
+    let num = 1;
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++){
+      const cell = at(r,c); if (cell.block) continue;
+      const startA = (!at(r,c-1) || at(r,c-1).block) && at(r,c+1) && !at(r,c+1).block;
+      const startD = (!at(r-1,c) || at(r-1,c).block) && at(r+1,c) && !at(r+1,c).block;
+      if (!startA && !startD) continue;
+      cell.num = num;
+      if (startA){
+        const list = []; let x = c;
+        while (at(r,x) && !at(r,x).block){ list.push(r*N+x); x++; }
+        XW.entries.push({ dir:'A', num, cells:list, clue:p.clues['A'+num] || '—' });
+      }
+      if (startD){
+        const list = []; let y = r;
+        while (at(y,c) && !at(y,c).block){ list.push(y*N+c); y++; }
+        XW.entries.push({ dir:'D', num, cells:list, clue:p.clues['D'+num] || '—' });
+      }
+      num++;
+    }
+    XW.entries.forEach((en, ei) => en.cells.forEach(ci => { XW.cells[ci][en.dir] = ei; }));
+
+    XW.render();
+    XW.renderClueLists();
+
+    XW.dir = 'A';
+    XW.setCursor(XW.entries.find(e => e.dir === 'A').cells[0]);
+    XW.clock.reset();
+    $('#xw-pen').textContent = '';
+    XW.pause(false);
+    XW.fit();
+  },
+
+  // The grid is measured into whatever room is left, so the page never scrolls.
+  fit(){
+    const area = $('#xw-fit'), g = $('#xw-grid');
+    if (!area || !g) return;
+    const w = area.clientWidth, h = area.clientHeight;
+    if (!w || !h) return;
+    const size = Math.max(140, Math.floor(Math.min(w, h)));
+    g.style.width = size + 'px';
+    g.style.height = size + 'px';
+    g.style.fontSize = Math.floor((size / XW.size) * 0.5) + 'px';
+  },
+
+  inProgress(){ return XW.clock.started && !XW.solved; },
+
+  reset(){ XW.loadPuzzle(XW.idx); },
+
+  render(){
+    const g = $('#xw-grid'); g.innerHTML = '';
+    g.style.gridTemplateColumns = 'repeat(' + XW.size + ',1fr)';
+    g.style.gridTemplateRows = 'repeat(' + XW.size + ',1fr)';
+    XW.cells.forEach(cell => {
+      const d = el('div', 'xw-cell' + (cell.block ? ' block' : ''));
+      d.dataset.i = cell.i;
+      if (!cell.block){
+        if (cell.num) d.appendChild(el('span','num',String(cell.num)));
+        const l = el('span','ltr',''); d.appendChild(l); cell.ltrEl = l;
+      }
+      cell.el = d; g.appendChild(d);
+    });
+  },
+
+  renderClueLists(){
+    ['A','D'].forEach(dir => {
+      const mount = $(dir === 'A' ? '#xw-across' : '#xw-down');
+      mount.innerHTML = '';
+      XW.entries.forEach((en, ei) => {
+        if (en.dir !== dir) return;
+        const li = el('li','xw-clue');
+        li.dataset.e = ei;
+        li.appendChild(el('b', null, String(en.num)));
+        li.appendChild(el('span', null, en.clue));
+        li.addEventListener('click', () => { XW.clock.begin(); XW.dir = dir; XW.setCursor(XW.firstEmptyIn(ei)); });
+        mount.appendChild(li);
+        en.li = li;
+      });
+    });
+  },
+
+  /* --- cursor ------------------------------------------------------------ */
+  entryIdx(){ const c = XW.cells[XW.cur]; return c[XW.dir] != null ? c[XW.dir] : c[XW.dir === 'A' ? 'D' : 'A']; },
+  firstEmptyIn(ei){
+    const en = XW.entries[ei];
+    return en.cells.find(i => !XW.cells[i].letter) ?? en.cells[0];
+  },
+  setDir(d){
+    if (XW.cells[XW.cur][d] == null) return;
+    XW.dir = d; XW.paint();
+  },
+  setCursor(i){
+    if (XW.cells[i].block) return;
+    XW.cur = i;
+    if (XW.cells[i][XW.dir] == null) XW.dir = XW.dir === 'A' ? 'D' : 'A';
+    XW.paint();
+  },
+  paint(){
+    const ei = XW.entryIdx();
+    const inWord = ei != null ? XW.entries[ei].cells : [];
+    XW.cells.forEach(c => { if (c.el) c.el.classList.remove('in-word','cursor'); });
+    inWord.forEach(i => XW.cells[i].el.classList.add('in-word'));
+    XW.cells[XW.cur].el.classList.add('cursor');
+
+    XW.entries.forEach((en, k) => {
+      if (!en.li) return;
+      en.li.classList.toggle('in-word', k === ei);
+      en.li.classList.toggle('active', k === ei);
+      en.li.classList.toggle('done', en.cells.every(i => XW.cells[i].letter));
+    });
+    if (ei != null){
+      const en = XW.entries[ei];
+      $('#xw-cluetext').innerHTML = '<b>' + en.num + (en.dir === 'A' ? 'A' : 'D') + '</b> ' + en.clue;
+      if (en.li && en.li.scrollIntoView) en.li.scrollIntoView({ block:'nearest' });
+    }
+  },
+  stepEntry(delta){
+    const list = XW.entries.map((e,i) => i).filter(i => XW.entries[i].dir === XW.dir);
+    const pos = list.indexOf(XW.entryIdx());
+    let next = pos + delta;
+    if (next < 0 || next >= list.length){          // wrap into the other direction
+      XW.dir = XW.dir === 'A' ? 'D' : 'A';
+      const other = XW.entries.map((e,i) => i).filter(i => XW.entries[i].dir === XW.dir);
+      XW.setCursor(XW.firstEmptyIn(delta > 0 ? other[0] : other[other.length - 1]));
+      return;
+    }
+    XW.setCursor(XW.firstEmptyIn(list[next]));
+  },
+  arrow(key){
+    const c = XW.cells[XW.cur], N = XW.size;
+    const want = (key === 'ArrowLeft' || key === 'ArrowRight') ? 'A' : 'D';
+    if (XW.dir !== want && c[want] != null){ XW.setDir(want); return; }
+    const step = { ArrowLeft:[0,-1], ArrowRight:[0,1], ArrowUp:[-1,0], ArrowDown:[1,0] }[key];
+    let r = c.r + step[0], col = c.c + step[1];
+    while (r >= 0 && col >= 0 && r < N && col < N){
+      const t = XW.cells[r*N + col];
+      if (!t.block){ XW.setCursor(t.i); return; }
+      r += step[0]; col += step[1];
+    }
+  },
+
+  /* --- entry ------------------------------------------------------------- */
+  setLetter(i, L, animate){
+    const c = XW.cells[i];
+    c.letter = L; c.wrong = false;
+    if (!L) c.revealed = false;
+    c.el.classList.toggle('wrong', false);
+    c.el.classList.toggle('revealed', c.revealed);
+    c.ltrEl.textContent = L;
+    if (animate && L){
+      c.ltrEl.classList.remove('pop'); void c.ltrEl.offsetWidth; c.ltrEl.classList.add('pop');
+    }
+  },
+  type(L){
+    if (XW.solved) return;
+    XW.setLetter(XW.cur, L, true);
+    const ei = XW.entryIdx();
+    if (ei != null){
+      const en = XW.entries[ei];
+      if (en.cells.every(i => XW.cells[i].letter)){
+        if (en.cells.every(i => XW.cells[i].letter === XW.cells[i].sol)) XW.flashWord(en);
+      }
+    }
+    if (XW.isComplete()){ XW.paint(); XW.finish(); return; }
+    XW.advance();
+  },
+  advance(){
+    const ei = XW.entryIdx(); if (ei == null) return;
+    const en = XW.entries[ei];
+    const pos = en.cells.indexOf(XW.cur);
+    const after = en.cells.slice(pos + 1).find(i => !XW.cells[i].letter);
+    if (after != null) return XW.setCursor(after);
+    if (pos + 1 < en.cells.length) return XW.setCursor(en.cells[pos + 1]);
+    XW.stepEntry(1);
+  },
+  backspace(){
+    const c = XW.cells[XW.cur];
+    if (c.letter){ XW.setLetter(XW.cur, '', false); XW.paint(); return; }
+    const ei = XW.entryIdx(); if (ei == null) return;
+    const en = XW.entries[ei];
+    const pos = en.cells.indexOf(XW.cur);
+    if (pos > 0){
+      XW.setCursor(en.cells[pos - 1]);
+      XW.setLetter(XW.cur, '', false);
+    }
+    XW.paint();
+  },
+  flashWord(en){
+    en.cells.forEach((i, k) => {
+      const cell = XW.cells[i];
+      setTimeout(() => {
+        cell.el.classList.remove('correct-flash'); void cell.el.offsetWidth;
+        cell.el.classList.add('correct-flash');
+        setTimeout(() => cell.el.classList.remove('correct-flash'), 520);
+      }, k * 55);
+    });
+  },
+
+  /* --- check / reveal ---------------------------------------------------- */
+  targets(scope){
+    if (scope === 'square') return [XW.cur];
+    if (scope === 'word'){ const ei = XW.entryIdx(); return ei == null ? [XW.cur] : XW.entries[ei].cells; }
+    return XW.cells.filter(c => !c.block).map(c => c.i);
+  },
+  check(scope){
+    if (!XW.solved && XW.clock.started){
+      XW.checks++; XW.penalty += CONFIG.scoring.hintPenalty;
+      $('#xw-pen').textContent = '+' + XW.penalty + 's';
+      toast('Check used · +' + CONFIG.scoring.hintPenalty + 's', 1500);
+    }
+    let bad = 0;
+    XW.targets(scope).forEach(i => {
+      const c = XW.cells[i];
+      if (!c.letter) return;
+      const wrong = c.letter !== c.sol;
+      c.wrong = wrong; c.el.classList.toggle('wrong', wrong);
+      if (wrong) bad++;
+    });
+    toast(bad ? bad + (bad === 1 ? ' letter is wrong' : ' letters are wrong') : 'Looking good so far');
+  },
+  reveal(scope){
+    XW.usedReveal = true;
+    XW.targets(scope).forEach(i => {
+      const c = XW.cells[i];
+      if (c.letter === c.sol) return;
+      c.revealed = true;
+      XW.setLetter(i, c.sol, true);
+      c.el.classList.add('revealed');
+    });
+    XW.paint();
+    if (XW.isComplete()) XW.finish();
+  },
+  clearAll(){ XW.loadPuzzle(XW.idx); },   // clean slate: grid, timer and penalties
+
+  /* --- state ------------------------------------------------------------- */
+  isComplete(){ return XW.cells.every(c => c.block || c.letter === c.sol); },
+
+  async finish(){
+    if (XW.solved) return;
+    XW.solved = true; XW.clock.stop();
+    const order = XW.cells.filter(c => !c.block);
+    order.forEach(c => {
+      c.el.style.animationDelay = ((c.r + c.c) * 45) + 'ms';
+      c.el.classList.add('finale');
+    });
+    await wait(900);
+    order.forEach(c => { c.el.classList.remove('finale'); c.el.style.animationDelay = ''; });
+    if (!XW.usedReveal) confetti();
+    resultsSheet({
+      game:'xw', puzzleId:XW.puzzle.id, label:XW.puzzle.label,
+      kicker:'Solved', title:'Nicely done',
+      blurb:'Every square in ' + XW.puzzle.label + ' is right.',
+      secs:XW.clock.secs, penalty:XW.penalty,
+      penaltyLabel:'Checks (' + XW.checks + ' × ' + CONFIG.scoring.hintPenalty + 's)',
+      unranked:XW.usedReveal && CONFIG.scoring.revealVoids,
+      note:'You used Reveal, so this run stays off the board. Clear the puzzle and it\'s a fresh start.'
+    });
+  },
+
+  /* --- timer ------------------------------------------------------------- */
+  pause(on){
+    XW.paused = !!on;
+    $('#xw-pause').classList.toggle('on', XW.paused);
+    $('#xw-playpause').innerHTML = XW.paused
+      ? '<svg viewBox="0 0 24 24"><path d="M8 5.5l11 6.5-11 6.5z"/></svg>'
+      : '<svg viewBox="0 0 24 24"><rect x="8" y="6" width="3" height="12" rx="1"/><rect x="14" y="6" width="3" height="12" rx="1"/></svg>';
+  },
+
+
+  /* --- on-screen keyboard ------------------------------------------------ */
+  buildKeyboard(){
+    const rows = ['QWERTYUIOP','ASDFGHJKL','ZXCVBNM'];
+    const kb = $('#xw-keyboard'); kb.innerHTML = '';
+    rows.forEach((row, ri) => {
+      const r = el('div','kb-row');
+      row.split('').forEach(k => {
+        const b = el('button', null, k);
+        b.addEventListener('click', () => { if (!XW.paused){ XW.clock.begin(); XW.type(k); } });
+        r.appendChild(b);
+      });
+      if (ri === 2){
+        const b = el('button','wide');
+        b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M20 6H9L3 12l6 6h11a1 1 0 001-1V7a1 1 0 00-1-1z"/><path d="M17 10l-4 4M13 10l4 4"/></svg>';
+        b.setAttribute('aria-label','Delete');
+        b.addEventListener('click', () => { if (!XW.paused) XW.backspace(); });
+        r.appendChild(b);
+      }
+      kb.appendChild(r);
+    });
+  }
+};
+
+/* ---------------------------------------------------------------------------
+   CONNECTIONS
+   ------------------------------------------------------------------------- */
+const CX = {
+  idx:0, puzzle:null, order:[], sel:[], solved:[], mistakes:4, history:[], over:false, busy:false,
+  clock:null,
+  LEVEL_CLASS: ['y','g','b','p'],
+  LEVEL_EMOJI: ['\u{1F7E8}','\u{1F7E9}','\u{1F7E6}','\u{1F7EA}'],
+
+  init(){
+    CX.clock = makeClock('#cx-timer', () => currentView === 'cx' && !CX.over);
+    $('#cx-shuffle').addEventListener('click', () => { CX.clock.begin(); CX.shuffle(); });
+    $('#cx-deselect').addEventListener('click', () => { CX.sel = []; CX.render(); });
+    $('#cx-submit').addEventListener('click', () => CX.submit());
+    CX.loadPuzzle(0);
+  },
+
+  loadPuzzle(idx){
+    const p = DATA.connections[idx];
+    CX.idx = idx;
+    $('#cx-lvl').textContent = p.label;
+    CX.puzzle = p; CX.sel = []; CX.solved = []; CX.mistakes = 4; CX.history = []; CX.over = false; CX.busy = false;
+    CX.order = CX.shuffled(p.groups.flatMap(g => g.words));
+    if (CX.clock) CX.clock.reset();
+    $('#cx-pen').textContent = '';
+    CX.render();
+  },
+
+  reset(){ CX.loadPuzzle(CX.idx); },
+
+  // Rows shrink as groups are solved, so the board always fills its space.
+  fit(){
+    const grid = $('#cx-grid');
+    if (grid) grid.style.gridTemplateRows = 'repeat(' + Math.max(1, Math.ceil(CX.order.length / 4)) + ',1fr)';
+  },
+
+  inProgress(){ return CX.clock.started && !CX.over; },
+  penalty(){ return (4 - CX.mistakes) * CONFIG.scoring.mistakePenalty; },
+
+  shuffled(a){ const x = a.slice(); for (let i = x.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [x[i],x[j]] = [x[j],x[i]]; } return x; },
+  groupOf(word){ return CX.puzzle.groups.findIndex(g => g.words.includes(word)); },
+
+  render(){
+    // solved rows
+    const sm = $('#cx-solved'); sm.innerHTML = '';
+    CX.solved.forEach(li => {
+      const g = CX.puzzle.groups[li];
+      const row = el('div','cx-solved ' + CX.LEVEL_CLASS[g.level]);
+      row.appendChild(el('div','cat', g.name));
+      row.appendChild(el('div','members', g.words.join(', ')));
+      sm.appendChild(row);
+    });
+    // tiles
+    const grid = $('#cx-grid'); grid.innerHTML = '';
+    CX.order.forEach(w => {
+      const t = el('button','cx-tile', w);
+      t.dataset.w = w;
+      if (CX.sel.includes(w)) t.classList.add('sel');
+      t.addEventListener('click', () => CX.toggle(w));
+      grid.appendChild(t);
+    });
+    // dots
+    const dots = $('#cx-dots'); dots.innerHTML = '';
+    for (let i = 0; i < 4; i++){
+      const d = el('span','cx-dot' + (i >= CX.mistakes ? ' gone' : ''));
+      dots.appendChild(d);
+    }
+    CX.fit();
+    $('#cx-submit').disabled = CX.sel.length !== 4 || CX.over || CX.busy;
+    $('#cx-deselect').disabled = CX.sel.length === 0 || CX.over;
+    $('#cx-shuffle').disabled = CX.over;
+  },
+
+  toggle(w){
+    if (CX.over || CX.busy) return;
+    CX.clock.begin();
+    const i = CX.sel.indexOf(w);
+    if (i >= 0) CX.sel.splice(i, 1);
+    else if (CX.sel.length < 4) CX.sel.push(w);
+    CX.render();
+  },
+
+  shuffle(){
+    CX.order = CX.shuffled(CX.order);
+    CX.render();
+    $$('.cx-tile').forEach((t, i) => {
+      t.style.opacity = 0; t.style.transform = 'scale(.85)';
+      setTimeout(() => { t.style.transition = 'opacity .25s, transform .25s'; t.style.opacity = 1; t.style.transform = ''; }, i * 22);
+    });
+  },
+
+  async submit(){
+    if (CX.sel.length !== 4 || CX.busy) return;
+    const key = CX.sel.slice().sort().join('|');
+    if (CX.history.some(h => h.slice().sort().join('|') === key)){ toast('Already guessed!'); return; }
+    CX.busy = true; CX.render();
+
+    const tiles = CX.sel.map(w => $('.cx-tile[data-w="' + w + '"]'));
+    tiles.forEach((t, i) => setTimeout(() => { t.classList.add('jump'); setTimeout(() => t.classList.remove('jump'), 340); }, i * 95));
+    await wait(tiles.length * 95 + 260);
+
+    CX.history.push(CX.sel.slice());
+    const levels = CX.sel.map(CX.groupOf);
+    const counts = {};
+    levels.forEach(l => counts[l] = (counts[l] || 0) + 1);
+    const best = Math.max(...Object.values(counts));
+
+    if (best === 4){
+      const li = levels[0];
+      CX.solved.push(li);
+      CX.order = CX.order.filter(w => !CX.sel.includes(w));
+      CX.sel = [];
+      CX.render(); CX.busy = false;
+      if (CX.solved.length === 4){ CX.win(); }
+      return;
+    }
+
+    if (best === 3) toast('One away…');
+    tiles.forEach(t => { t.classList.add('shake'); setTimeout(() => t.classList.remove('shake'), 520); });
+    await wait(560);
+    CX.mistakes--;
+    if (CONFIG.scoring.mistakePenalty) $('#cx-pen').textContent = '+' + CX.penalty() + 's';
+    CX.render(); CX.busy = false;
+    if (CX.mistakes === 0) CX.lose();
+  },
+
+  async win(){
+    CX.over = true; CX.clock.stop(); confetti();
+    const praise = ['Perfect!','Great!','Solid!','Phew!'][Math.max(0, 4 - CX.mistakes)];
+    toast(praise, 1500);
+    await wait(900);
+    CX.results(true);
+  },
+
+  async lose(){
+    CX.over = true; CX.clock.stop(); CX.render();
+    const left = CX.puzzle.groups.map((g,i) => i).filter(i => !CX.solved.includes(i));
+    for (const li of left){
+      await wait(650);
+      CX.solved.push(li);
+      CX.order = CX.order.filter(w => !CX.puzzle.groups[li].words.includes(w));
+      CX.render();
+    }
+    await wait(700);
+    CX.results(false);
+  },
+
+  results(won){
+    const grid = CX.history.map(g => g.map(w => CX.LEVEL_EMOJI[CX.puzzle.groups[CX.groupOf(w)].level]).join('')).join('\n');
+    resultsSheet({
+      game:'cx', puzzleId:CX.puzzle.id, label:CX.puzzle.label,
+      kicker: won ? 'Solved' : 'Out of mistakes',
+      title: won ? 'You got them all' : 'Next time',
+      blurb: CX.history.length + ' guess' + (CX.history.length === 1 ? '' : 'es') + '.'
+        + '</p><div class="cx-share">' + grid.replace(/\n/g,'<br>') + '</div>'
+        + '<button class="cta" id="cx-copy">Copy results</button><p>',
+      secs: CX.clock.secs,
+      penalty: won ? CX.penalty() : 0,
+      penaltyLabel: 'Mistakes (' + (4 - CX.mistakes) + ' × ' + CONFIG.scoring.mistakePenalty + 's)',
+      unranked: !won,
+      note: 'Only a finished board goes on the leaderboard.'
+    });
+    const btn = $('#cx-copy');
+    if (btn) btn.addEventListener('click', () => {
+      const text = CONFIG.shareTag + ' ' + CX.puzzle.label + '\n' + grid;
+      const done = () => { btn.textContent = 'Copied'; setTimeout(() => btn.textContent = 'Copy results', 1600); };
+      if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, done);
+      else done();
+    });
+  }
+};
+
+/* ---------------------------------------------------------------------------
+   STRANDS
+   ------------------------------------------------------------------------- */
+const ST = {
+  idx:0, puzzle:null, rows:8, cols:6, cells:[],
+  found:[], extras:[], hintsBanked:0, hintsUsed:0, penalty:0, activeHint:null, hintOrdered:false,
+  sel:[], dragging:false, tapMode:false, busy:false, clock:null,
+
+  init(){
+    ST.clock = makeClock('#st-timer', () => currentView === 'st' && !ST.done());
+    ST.bindPointer();
+    $('#st-hint').addEventListener('click', () => ST.useHint());
+    window.addEventListener('resize', () => ST.redrawLines());
+    if (window.ResizeObserver) new ResizeObserver(() => ST.redrawLines()).observe($('#st-boardwrap'));
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => ST.redrawLines());
+    ST.loadPuzzle(0);
+  },
+
+  loadPuzzle(idx){
+    const p = DATA.strands[idx];
+    ST.idx = idx;
+    $('#st-lvl').textContent = p.label;
+    ST.puzzle = p;
+    ST.rows = p.grid.length; ST.cols = p.grid[0].length;
+    ST.found = []; ST.extras = []; ST.hintsBanked = 0; ST.hintsUsed = 0; ST.penalty = 0;
+    ST.activeHint = null; ST.hintOrdered = false;
+    ST.sel = []; ST.tapMode = false; ST.busy = false;
+    if (ST.clock) ST.clock.reset();
+    $('#st-pen').textContent = '';
+    $('#st-theme').textContent = p.theme;
+    ST.render();
+  },
+
+  reset(){ ST.loadPuzzle(ST.idx); },
+
+  // Six columns by eight rows, scaled to whatever height is going spare.
+  fit(){
+    const area = $('#st-fit'), wrap = $('#st-boardwrap'), board = $('#st-board');
+    if (!area || !wrap) return;
+    const w = area.clientWidth, h = area.clientHeight;
+    if (!w || !h) return;
+    const cell = Math.min(w / ST.cols, h / ST.rows);
+    wrap.style.width = Math.floor(cell * ST.cols) + 'px';
+    board.style.fontSize = Math.max(11, Math.floor(cell * 0.42)) + 'px';
+    ST.redrawLines();
+  },
+
+  inProgress(){ return ST.clock.started && !ST.done(); },
+
+  words(){ return Object.keys(ST.puzzle.words); },
+  isSpangram(w){ return w === ST.puzzle.spangram; },
+
+  /* --- render ------------------------------------------------------------ */
+  render(){
+    const board = $('#st-board'); board.innerHTML = '';
+    board.style.gridTemplateColumns = 'repeat(' + ST.cols + ',1fr)';
+    ST.cells = [];
+    for (let r = 0; r < ST.rows; r++) for (let c = 0; c < ST.cols; c++){
+      const d = el('div','st-cell');
+      d.dataset.r = r; d.dataset.c = c;
+      d.appendChild(el('span', null, ST.puzzle.grid[r][c]));
+      board.appendChild(d);
+      ST.cells.push(d);
+    }
+    ST.paint();
+    requestAnimationFrame(() => ST.fit());
+  },
+
+  cellAt(r,c){ return (r<0||c<0||r>=ST.rows||c>=ST.cols) ? null : ST.cells[r*ST.cols + c]; },
+
+  paint(){
+    ST.cells.forEach(d => d.classList.remove('active','found','span','hinted'));
+    $$('.order', $('#st-board')).forEach(n => n.remove());
+
+    ST.found.forEach(w => {
+      const cls = ST.isSpangram(w) ? 'span' : 'found';
+      ST.puzzle.words[w].forEach(([r,c]) => ST.cellAt(r,c).classList.add(cls));
+    });
+    if (ST.activeHint){
+      ST.puzzle.words[ST.activeHint].forEach(([r,c], i) => {
+        const d = ST.cellAt(r,c);
+        d.classList.add('hinted');
+        if (ST.hintOrdered) d.appendChild(el('span','order', String(i + 1)));
+      });
+    }
+    ST.sel.forEach(([r,c]) => ST.cellAt(r,c).classList.add('active'));
+
+    const total = ST.words().length;
+    $('#st-progress').innerHTML = '<b>' + ST.found.length + '</b> of ' + total + ' theme words found.'
+      + (ST.found.length === total ? ' Board complete.' : '');
+
+    const toNext = ST.extras.length % 3;
+    const btn = $('#st-hint');
+    btn.disabled = ST.hintsBanked === 0 || ST.found.length === total;
+    $('#st-hintfill').style.width = (ST.hintsBanked > 0 ? 100 : (toNext / 3) * 100) + '%';
+    $('.lbl', btn).textContent = ST.hintsBanked > 0 ? 'Use hint' : 'Hint  ' + toNext + '/3';
+  },
+
+  /* --- path lines -------------------------------------------------------- */
+  redrawLines(){
+    const svg = $('#st-lines'), wrap = $('#st-boardwrap');
+    const box = wrap.getBoundingClientRect();
+    if (!box.width) return;
+    svg.setAttribute('viewBox', '0 0 ' + box.width + ' ' + box.height);
+    svg.innerHTML = '';
+    const centre = ([r,c]) => {
+      const b = ST.cellAt(r,c).getBoundingClientRect();
+      return [b.left - box.left + b.width / 2, b.top - box.top + b.height / 2];
+    };
+    const w = ST.cellAt(0,0).getBoundingClientRect().width;
+
+    const line = (path, colour, width, op) => {
+      const pts = path.map(centre).map(p => p.join(',')).join(' ');
+      const el2 = document.createElementNS('http://www.w3.org/2000/svg','polyline');
+      el2.setAttribute('points', pts);
+      el2.setAttribute('fill','none');
+      el2.setAttribute('stroke', colour);
+      el2.setAttribute('stroke-width', width);
+      el2.setAttribute('stroke-linecap','round');
+      el2.setAttribute('stroke-linejoin','round');
+      if (op) el2.setAttribute('opacity', op);
+      svg.appendChild(el2);
+    };
+    const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+    ST.found.forEach(word => line(ST.puzzle.words[word], css(ST.isSpangram(word) ? '--st-span' : '--st-theme'), w * .5));
+    if (ST.sel.length > 1) line(ST.sel, css('--st-active'), w * .42, .95);
+  },
+
+  /* --- input ------------------------------------------------------------- */
+  bindPointer(){
+    const board = $('#st-board');
+    const cellFromEvent = e => {
+      const t = document.elementFromPoint(e.clientX, e.clientY);
+      const c = t && t.closest ? t.closest('.st-cell') : null;
+      return c ? [+c.dataset.r, +c.dataset.c] : null;
+    };
+    const same = (a,b) => a && b && a[0] === b[0] && a[1] === b[1];
+    const adjacent = (a,b) => Math.max(Math.abs(a[0]-b[0]), Math.abs(a[1]-b[1])) === 1;
+
+    board.addEventListener('pointerdown', e => {
+      if (ST.busy || ST.done()) return;
+      const cell = cellFromEvent(e); if (!cell) return;
+      e.preventDefault();
+      ST.clock.begin();
+
+      // tap-to-select: tapping the last letter again submits
+      if (ST.tapMode && ST.sel.length && same(cell, ST.sel[ST.sel.length - 1])){ ST.submit(); return; }
+      if (ST.tapMode && ST.sel.length){
+        const last = ST.sel[ST.sel.length - 1];
+        const back = ST.sel.findIndex(s => same(s, cell));
+        if (back >= 0){                       // tapped a letter already in the word: rewind to it
+          ST.sel = ST.sel.slice(0, back + 1); ST.paint(); ST.redrawLines(); return;
+        }
+        if (!adjacent(cell, last)){           // tapped somewhere unreachable: start again there
+          ST.sel = [cell]; ST.popCell(cell); ST.paint(); ST.redrawLines(); return;
+        }
+        ST.sel.push(cell); ST.popCell(cell); ST.paint(); ST.redrawLines(); return;
+      }
+      ST.dragging = true; ST.dragMoved = false;
+      ST.sel = [cell]; ST.popCell(cell); ST.paint(); ST.redrawLines();
+      board.setPointerCapture(e.pointerId);
+    });
+
+    board.addEventListener('pointermove', e => {
+      if (!ST.dragging) return;
+      const cell = cellFromEvent(e); if (!cell) return;
+      const last = ST.sel[ST.sel.length - 1];
+      if (same(cell, last)) return;
+      const back = ST.sel.findIndex(s => same(s, cell));
+      if (back >= 0){ if (back === ST.sel.length - 2){ ST.sel.pop(); ST.paint(); ST.redrawLines(); } return; }
+      if (!adjacent(cell, last)) return;
+      ST.dragMoved = true;
+      ST.sel.push(cell); ST.popCell(cell); ST.paint(); ST.redrawLines();
+    });
+
+    const end = () => {
+      if (!ST.dragging) return;
+      ST.dragging = false;
+      if (ST.dragMoved) ST.submit();
+      else { ST.tapMode = true; }   // a plain tap starts tap-to-select mode
+    };
+    board.addEventListener('pointerup', end);
+    board.addEventListener('pointercancel', end);
+    board.addEventListener('contextmenu', e => e.preventDefault());
+  },
+
+  clearSelection(){ ST.sel = []; ST.tapMode = false; ST.paint(); ST.redrawLines(); },
+
+  popCell([r,c]){
+    const d = ST.cellAt(r,c);
+    d.classList.remove('pop'); void d.offsetWidth; d.classList.add('pop');
+    setTimeout(() => d.classList.remove('pop'), 360);
+  },
+
+  done(){ return ST.found.length === ST.words().length; },
+
+  /* --- submit ------------------------------------------------------------ */
+  async submit(){
+    const path = ST.sel.slice();
+    ST.sel = []; ST.tapMode = false;
+    if (path.length < 4){ ST.paint(); ST.redrawLines(); return; }
+
+    const word = path.map(([r,c]) => ST.puzzle.grid[r][c]).join('');
+    const rev  = path.slice().reverse().map(([r,c]) => ST.puzzle.grid[r][c]).join('');
+    const match = ST.words().find(w => (w === word || w === rev) && !ST.found.includes(w) && ST.samePath(w, path));
+
+    if (match){
+      ST.busy = true;
+      ST.found.push(match);
+      const cls = ST.isSpangram(match) ? 'span' : 'found';
+      ST.puzzle.words[match].forEach(([r,c], i) => setTimeout(() => {
+        const d = ST.cellAt(r,c); d.classList.add(cls); ST.popCell([r,c]);
+      }, i * 70));
+      ST.paint(); ST.redrawLines();
+      if (ST.activeHint === match){ ST.activeHint = null; ST.hintOrdered = false; }
+      if (ST.isSpangram(match)) toast('Spangram!', 1600);
+      await wait(path.length * 70 + 200);
+      ST.busy = false;
+      ST.paint(); ST.redrawLines();
+      if (ST.done()) ST.finish();
+      return;
+    }
+
+    const plain = ST.puzzle.extras.includes(word) ? word : (ST.puzzle.extras.includes(rev) ? rev : null);
+    if (plain){
+      if (ST.extras.includes(plain)){ toast('Already found'); }
+      else {
+        ST.extras.push(plain);
+        if (ST.extras.length % 3 === 0){ ST.hintsBanked++; toast('Hint earned!', 1700); }
+        else toast(plain + ' — ' + (3 - ST.extras.length % 3) + ' more for a hint', 1700);
+      }
+    } else if (ST.words().includes(word) || ST.words().includes(rev)){
+      const w2 = ST.words().includes(word) ? word : rev;
+      toast(ST.found.includes(w2) ? 'Already found' : 'Right word, wrong path');
+    } else {
+      path.forEach(([r,c]) => {
+        const d = ST.cellAt(r,c);
+        d.classList.remove('nudge'); void d.offsetWidth; d.classList.add('nudge');
+        setTimeout(() => d.classList.remove('nudge'), 440);
+      });
+    }
+    ST.paint(); ST.redrawLines();
+  },
+
+  samePath(word, path){
+    const real = ST.puzzle.words[word];
+    if (real.length !== path.length) return false;
+    const a = path.map(p => p.join(',')).sort().join('|');
+    const b = real.map(p => p.join(',')).sort().join('|');
+    return a === b;
+  },
+
+  useHint(){
+    if (ST.hintsBanked === 0) return;
+    ST.hintsUsed++;
+    ST.penalty += CONFIG.scoring.hintPenalty;
+    $('#st-pen').textContent = '+' + ST.penalty + 's';
+    if (ST.activeHint && !ST.hintOrdered){
+      ST.hintsBanked--; ST.hintOrdered = true;
+      toast('Letters numbered in order', 1700);
+    } else {
+      const next = ST.words().find(w => !ST.found.includes(w));
+      if (!next) return;
+      ST.hintsBanked--; ST.activeHint = next; ST.hintOrdered = false;
+      toast('One word lit up — now find the path', 1900);
+    }
+    ST.paint();
+  },
+
+  async finish(){
+    ST.clock.stop();
+    confetti();
+    await wait(500);
+    resultsSheet({
+      game:'st', puzzleId:ST.puzzle.id, label:ST.puzzle.label,
+      kicker:'Board cleared', title:'Every letter placed',
+      blurb:'The spangram was <b>' + ST.puzzle.spangram + '</b>, and you turned up '
+        + ST.extras.length + ' extra word' + (ST.extras.length === 1 ? '' : 's') + ' along the way.',
+      secs:ST.clock.secs, penalty:ST.penalty,
+      penaltyLabel:'Hints (' + ST.hintsUsed + ' × ' + CONFIG.scoring.hintPenalty + 's)',
+      unranked:false
+    });
+  }
+};
+
+
+/* --- boot ----------------------------------------------------------------- */
+GAMES.xw = XW; GAMES.cx = CX; GAMES.st = ST;
+XW.init(); CX.init(); ST.init();
+
+// Loading screen: one line, chosen at random, then out of the way.
+const splash = $('#splash');
+$('#splash-line').innerHTML =
+  CONFIG.splashLines[Math.floor(Math.random() * CONFIG.splashLines.length)]
+  + '<span class="splash-dots">…</span>';
+const dropSplash = () => splash.classList.add('gone');
+setTimeout(dropSplash, CONFIG.splashMs);
+splash.addEventListener('click', dropSplash);
+
+show('hub');
+
+})();
+
+</script>
 </body>
 </html>

@@ -1,10 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title></title>
-  <!-- Password-gated landing page: gate logic to be added -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mark &amp; Bernadette</title>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     QUICK CUSTOMIZATION GUIDE
+       Codes + where they lead ..... search "ROUTES" below
+       Colours / fonts .............. --cream / --ink / --blue / --display / --body in :root
+       Background photo ............. --bg-image in :root (optional — see note there)
+       Wrong-code message ............ search "that's not quite right"
+     ═══════════════════════════════════════════════════════════════ -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alice&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  /* EDIT: same palette as the two invites — change here to re-theme the gate */
+  --cream: #FAE7C6;
+  --ink:   #451A03;
+  --blue:  #5479A2;
+  --white: #FFFFFF;
+  --display: "Alice", Georgia, serif;
+  --body:    "Cormorant Garamond", Georgia, serif;
+
+  /* EDIT: optional — a photo behind the blur. Leave empty for a plain
+     cream backdrop instead: --bg-image: none; */
+  --bg-image: none;
+  /* --bg-image: url("gate-photo.jpg"); */
+}
+
+*,*::before,*::after{ box-sizing:border-box; }
+body{
+  margin:0; min-height:100svh; background:var(--cream); color:var(--ink);
+  font-family:var(--body); display:grid; place-items:center;
+  padding:1.5rem;
+}
+.backdrop{
+  position:fixed; inset:0; z-index:0;
+  background:var(--bg-image) center/cover no-repeat, var(--cream);
+  filter:blur(18px) brightness(.96); transform:scale(1.08);
+}
+.panel{
+  position:relative; z-index:1; width:min(24rem,100%);
+  background:var(--blue); color:var(--white);
+  border:1px solid rgba(255,255,255,.5); border-radius:6px;
+  padding:clamp(2rem,5vw,2.75rem);
+  box-shadow:0 24px 60px rgba(69,26,3,.30);
+  text-align:center;
+}
+.panel h1{
+  font-family:var(--display); font-weight:700; font-size:1.9rem;
+  margin:0 0 .3rem; line-height:1.1;
+}
+.panel p{ margin:0 0 1.5rem; font-size:.95rem; opacity:.92; }
+.panel input{
+  width:100%; font-family:var(--body); font-size:1.1rem; text-align:center;
+  letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink); background:var(--white);
+  border:1px solid rgba(255,255,255,.6); border-radius:3px;
+  padding:.65rem .75rem; margin-bottom:1rem;
+}
+.panel button{
+  width:100%; cursor:pointer; font-family:var(--body); font-size:1rem;
+  letter-spacing:.1em; padding:.75rem 1rem;
+  color:var(--white); background:var(--ink);
+  border:1px solid var(--white); border-radius:3px;
+  transition:filter .2s ease;
+}
+.panel button:hover{ filter:contrast(120%); }
+.error{
+  min-height:1.2em; margin-top:.85rem; font-size:.85rem;
+  font-style:italic; color:#FFD9C7;
+}
+</style>
 </head>
 <body>
+
+<div class="backdrop" aria-hidden="true"></div>
+
+<form class="panel" id="gate">
+  <h1>Mark &amp; Bernadette</h1>
+  <p>Enter the code from your invitation</p>
+  <input id="code" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" required>
+  <button type="submit">Enter</button>
+  <p class="error" id="err"></p>
+</form>
+
+<script>
+/* EDIT: ROUTES — the code someone enters, and the folder it sends them to.
+   Codes are matched case-insensitively. Add more lines the same way if
+   you ever need a third code. */
+var ROUTES = {
+  'MB16': '/one-day/',
+  'MB17': '/two-day/'
+};
+
+var form = document.getElementById('gate');
+var input = document.getElementById('code');
+var err = document.getElementById('err');
+
+form.addEventListener('submit', function(e){
+  e.preventDefault();
+  var code = input.value.trim().toUpperCase();
+  var dest = ROUTES[code];
+  if(dest){
+    location.href = dest;
+  } else {
+    err.textContent = "that's not quite right — try the code on your invite";
+    input.select();
+  }
+});
+</script>
 </body>
 </html>
