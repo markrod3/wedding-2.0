@@ -766,6 +766,7 @@ a{ color:inherit; text-decoration:none; }
   </svg>
 </button>
 
+<!-- No longer opened by the RSVP buttons above, which now link out to RSVP_URL. Left in place in case you want a fallback form later. -->
 <div class="popup" id="popup" role="dialog" aria-modal="true" aria-label="rsvp form">
   <div class="popup__bg" data-close></div>
   <div class="popup__panel">
@@ -855,13 +856,26 @@ a{ color:inherit; text-decoration:none; }
             </svg>
           </a>
 
-          <a class="dock__item" href="/games/" aria-label="More games">
+          <a class="dock__item" href="/games/" id="games-link" aria-label="More games">
             <svg viewBox="0 0 64 64" aria-hidden="true">
               <circle cx="32" cy="32" r="32" fill="#451A03"/>
               <path d="M23 32h18M34 24l8 8-8 8" fill="none" stroke="#FAE7C6"
                     stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </a>
+          <script>
+          // EDIT: remembers this invite (day + mobile/web) so the games page's
+          // back button can return here. Reused by /games/index.html via the
+          // same "bm-games:origin" localStorage key.
+          (function(){
+            var link = document.getElementById('games-link');
+            if (!link) return;
+            link.addEventListener('click', function(){
+              try { localStorage.setItem('bm-games:origin', JSON.stringify({ day: 'two-day', variant: 'web' })); }
+              catch (e) {}
+            });
+          })();
+          </script>
 
         </nav>
       </div>
@@ -880,6 +894,9 @@ a{ color:inherit; text-decoration:none; }
 <!-- ═══════════════════════ SCRIPT 1 — PAGE CHROME ═══════════════════════ -->
 <script>
 (function(){
+  // EDIT: RSVP_URL — where both RSVP buttons send guests.
+  var RSVP_URL = 'https://withjoy.com/bernadette-and-mark?utm_medium=web&utm_source=joy&utm_campaign=website_overview_copy';
+
   var reduce   = matchMedia('(prefers-reduced-motion: reduce)').matches;
   var canHover = matchMedia('(hover: hover) and (pointer: fine)').matches;
 
@@ -940,13 +957,12 @@ a{ color:inherit; text-decoration:none; }
   addEventListener('scroll', onScroll, {passive:true});
   addEventListener('resize', onScroll);
 
-  /* ── the rsvp popup ── */
+  /* ── rsvp buttons: open the shared RSVP link in a new tab ── */
   var popup = document.getElementById('popup');
-  function openPopup(){
-    popup.classList.add('is-open');
-    setTimeout(function(){ document.getElementById('fname').focus(); }, 60);
+  function goToRsvp(){
+    window.open(RSVP_URL, '_blank', 'noopener');
   }
-  btn.addEventListener('click', openPopup);
+  btn.addEventListener('click', goToRsvp);
   magnetise(btn, 0.28);
 
   popup.addEventListener('click', function(e){
@@ -956,11 +972,11 @@ a{ color:inherit; text-decoration:none; }
     if(e.key === 'Escape') popup.classList.remove('is-open');
   });
 
-  /* the early RSVP strip: reveal on scroll, same popup */
+  /* the early RSVP strip: reveal on scroll, same destination */
   var earlyBand = document.getElementById('rsvp-early');
   var earlyBtn  = document.getElementById('rsvpEarlyBtn');
   if(earlyBand && earlyBtn){
-    earlyBtn.addEventListener('click', openPopup);
+    earlyBtn.addEventListener('click', goToRsvp);
     magnetise(earlyBtn, 0.22);
     if('IntersectionObserver' in window){
       new IntersectionObserver(function(entries){

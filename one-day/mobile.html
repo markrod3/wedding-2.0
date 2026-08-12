@@ -17,7 +17,7 @@
        Flowing photo strip (16) ..... search "YOUR PHOTOS" (near the bottom)
        Schedule (times/venues/etc) .. search "const items" (near the bottom)
        Map links ..................... same block, 3rd item in each row
-       RSVP form destination ........ search "point this form at"
+       RSVP button destination ...... search "RSVP_URL"
        Game links .................... search "point at the games"
        Nav menu items ................ search "sidenav"
      ═══════════════════════════════════════════════════════════════════════ -->
@@ -676,6 +676,7 @@ a{ color:inherit; text-decoration:none; }
   </svg>
 </button>
 
+<!-- No longer opened by the RSVP buttons above, which now link out to RSVP_URL. Left in place in case you want a fallback form later. -->
 <div class="popup" id="popup" role="dialog" aria-modal="true" aria-label="rsvp form">
   <div class="popup__bg" data-close></div>
   <div class="popup__panel">
@@ -757,7 +758,7 @@ a{ color:inherit; text-decoration:none; }
         </svg>
       </a>
 
-      <a class="dock__item" href="/games/" aria-label="More games">
+      <a class="dock__item" href="/games/" id="games-link" aria-label="More games">
         <svg viewBox="0 0 64 64" aria-hidden="true">
           <circle cx="32" cy="32" r="32" fill="#451A03"/>
           <path d="M23 32h18M34 24l8 8-8 8" fill="none" stroke="#FAE7C6"
@@ -766,6 +767,19 @@ a{ color:inherit; text-decoration:none; }
       </a>
 
     </nav>
+    <script>
+    // EDIT: remembers this invite (day + mobile/web) so the games page's back
+    // button can return here. Reused by /games/index.html via the same
+    // "bm-games:origin" localStorage key.
+    (function(){
+      var link = document.getElementById('games-link');
+      if (!link) return;
+      link.addEventListener('click', function(){
+        try { localStorage.setItem('bm-games:origin', JSON.stringify({ day: 'one-day', variant: 'mobile' })); }
+        catch (e) {}
+      });
+    })();
+    </script>
 
     <div class="figure fade">
       <svg class="figure__frame" viewBox="0 0 400 520" preserveAspectRatio="none" aria-hidden="true">
@@ -779,6 +793,9 @@ a{ color:inherit; text-decoration:none; }
 
 <script>
 (function(){
+  // EDIT: RSVP_URL — where both RSVP buttons send guests.
+  var RSVP_URL = 'https://withjoy.com/bernadette-and-mark?utm_medium=web&utm_source=joy&utm_campaign=website_overview_copy';
+
   var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   var STAR = '<svg viewBox="0 0 12 11"><path d="M6.8 2.7c0-.3.1-.6.1-1 .1-.5.1-1 0-1.4 0-.3-.4-.4-.6-.2-.2.2-.4.5-.6.8-.8 1.2-1.6 1.6-2.9 1.2-.3-.1-.6-.1-.9-.1-.3 0-.7.2-.8.5-.1.2 0 .4.1.5.4.4 1.1.7 1.7.8.5.1 1.3.3 1.3.8 0 .5-.9 1-1.4 1.3-.9.5-1.7 1.1-2.5 1.6-.3.3-.2.9.2.9.4 0 .8 0 1.2-.2.5-.2.9-.4 1.4-.7 1.1-.7 1.6-.6 1.6.7 0 .4 0 .8.1 1.2.2.5.5.8 1.1.8.5 0 1.1-.2 1.4-.7.1-.2.2-.4-.1-.6-.2-.1-.4-.2-.5-.3-.5-.4-.5-1.7.1-2.3.5-.5.9.1 1.3.3.4.2.8.4 1.2.7.2.1.4.2.6.3.5.3 1 .2 1.3-.2.3-.4.1-.9-.4-1.2-.4-.3-.8-.5-1.2-.7-.3-.2-.5-.4-.7-.7-.1-.2 0-.6.2-.7.6-.5 1.3-.9 1.9-1.4.4-.3.7-.5 1-.8.1-.2.1-.5 0-.7-.2-.5-.9-.3-1.3-.1-.7.4-1.5.9-2.3 1.3-.3.2-.6.3-.9.4-.4.1-.5-.2-.5-.4z"/></svg>';
@@ -811,8 +828,7 @@ a{ color:inherit; text-decoration:none; }
 
   var popup = document.getElementById('popup');
   btn.addEventListener('click', function(){
-    popup.classList.add('is-open');
-    setTimeout(function(){ document.getElementById('fname').focus(); }, 60);
+    window.open(RSVP_URL, '_blank', 'noopener');
   });
   popup.addEventListener('click', function(e){
     if(e.target.hasAttribute('data-close')) popup.classList.remove('is-open');
@@ -826,8 +842,7 @@ a{ color:inherit; text-decoration:none; }
   var earlyBtn  = document.getElementById('rsvpEarlyBtn');
   if(earlyBand && earlyBtn){
     earlyBtn.addEventListener('click', function(){
-      popup.classList.add('is-open');
-      setTimeout(function(){ document.getElementById('fname').focus(); }, 60);
+      window.open(RSVP_URL, '_blank', 'noopener');
     });
     if('IntersectionObserver' in window){
       new IntersectionObserver(function(entries){

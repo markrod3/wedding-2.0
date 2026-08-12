@@ -1271,7 +1271,7 @@ function show(view){
   $$('.view, .gameview').forEach(v => v.classList.remove('active'));
   $('#view-' + view).classList.add('active');
   const inGame = !!GAMES[view];
-  $('#btn-home').hidden  = (view === 'hub');
+  $('#btn-home').hidden  = false;  // always visible: hub -> origin invite, elsewhere -> hub
   $('#btn-help').hidden  = !inGame;
   $('#btn-board').hidden = !inGame;
   if (view === 'hub')        setTitle('Games', CONFIG.coupleNames);
@@ -1293,8 +1293,20 @@ function openGame(game, levelIdx){
   requestAnimationFrame(() => { G.fit(); requestAnimationFrame(() => G.fit()); });
 }
 
+// Sends the guest back to whichever invite page they arrived from (day +
+// mobile/web), remembered in localStorage by that page's "More games" link.
+// Falls back to the site root if we never learned an origin (e.g. a guest
+// linked straight to /games/, or localStorage isn't available).
+function goToOrigin(){
+  const origin = load('origin');
+  const validDay     = origin && (origin.day === 'one-day' || origin.day === 'two-day');
+  const validVariant = origin && (origin.variant === 'mobile' || origin.variant === 'web');
+  location.href = (validDay && validVariant) ? '/' + origin.day + '/' + origin.variant + '.html' : '/';
+}
+
 // Backing out mid-attempt throws the run away, so make sure that's intended.
 function goBack(){
+  if (currentView === 'hub'){ goToOrigin(); return; }
   const G = GAMES[currentView];
   if (G && G.inProgress && G.inProgress()){
     openSheet(`<div class="kicker">Hold on</div><h3>Leave this puzzle?</h3>
