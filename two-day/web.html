@@ -1223,8 +1223,15 @@ a{ color:inherit; text-decoration:none; }
     render(current);
     requestAnimationFrame(loop);
   }
+  /* the very first open/close after page load competes with images and
+     fonts still decoding, so it snaps instantly instead of animating --
+     avoids janking straight into that contention. Every interaction after
+     the page has settled glides normally. */
+  var ready = document.readyState === 'complete';
+  if(!ready) addEventListener('load', function(){ ready = true; });
+
   function kick(){
-    if(reduce){ current = target; render(current); return; }
+    if(reduce || !ready){ current = target; render(current); return; }
     if(running) return;
     running = true;
     requestAnimationFrame(loop);
@@ -1244,22 +1251,21 @@ a{ color:inherit; text-decoration:none; }
     panels.forEach(function(p, j){ p.classList.toggle('is-pinned', j === i); });
   }
 
+  /* click-only: no pointerenter/pointerleave -- opening only ever happens
+     from a deliberate click, so a stray hover during page load can't
+     trigger an animation. Clicking the open panel again closes it right
+     away instead of waiting on the pointer to leave. */
   if(canHover){
     panels.forEach(function(panel, i){
-      panel.addEventListener('pointerenter', function(){ goTo(i); });
       panel.addEventListener('click', function(){
-        setPinned(pinned === i ? null : i);
-        goTo(i);
+        if(pinned === i){ setPinned(null); goTo(REST); }
+        else { setPinned(i); goTo(i); }
       });
       panel.addEventListener('focus', function(){ goTo(i); });
     });
     ticks.forEach(function(tick, i){
       if(!tick) return;
-      tick.addEventListener('pointerenter', function(){ goTo(i); });
       tick.addEventListener('click', function(){ setPinned(i); goTo(i); });
-    });
-    root.addEventListener('pointerleave', function(){
-      goTo(pinned === null ? REST : pinned);
     });
   }
 
