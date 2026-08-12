@@ -687,9 +687,36 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
 'use strict';
+
+/* ============================================================================
+   0. SUPABASE CONFIG — project URL + public anon key.
+   ----------------------------------------------------------------------------
+   The anon key is a public/publishable key, safe to ship in client-side code —
+   it only grants whatever your Row Level Security policies on the `leaderboard`
+   table allow (this app needs anon INSERT and SELECT). Do not put a service-role
+   key here.
+   ========================================================================== */
+const SUPABASE_CONFIG = {
+  url    : 'https://jgsvgvuitnkhzfzcrtdk.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impnc3ZndnVpdG5raHpmemNydGRrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0MzYzODIsImV4cCI6MjEwMjAxMjM4Mn0.lZflopZL3-zZ-uaTecmDrCbTJVIZmnPVLd4pUfDWiew'
+};
+// If the CDN script above is slow/blocked (venue wifi, ad-blocker, etc.), don't
+// let that take the whole games page down with it — just disable the shared
+// leaderboard and keep the puzzles working.
+let sb = null;
+try {
+  if (window.supabase && window.supabase.createClient){
+    sb = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+  } else {
+    console.error('Supabase client library did not load; shared leaderboard disabled.');
+  }
+} catch (err){
+  console.error('Supabase client init failed; shared leaderboard disabled.', err);
+}
 
 /* ============================================================================
    10. DATA — the only part you need to touch to change the puzzles.
@@ -1068,6 +1095,45 @@ function renderBoard(mount, id, highlight){
   });
 }
 
+// Supabase leaderboard: `game` matches the local board id shape, e.g. "xw:xw-easy".
+// Fire-and-forget — a failed insert (offline, RLS misconfigured, etc.) shouldn't
+// break the local leaderboard experience above.
+function submitScoreToSupabase(name, game, score){
+  if (!sb) return;
+  sb.from('leaderboard').insert({ name: name, game: game, score: score })
+    .then(({ error }) => { if (error) console.error('Supabase insert failed:', error); })
+    .catch(err => console.error('Supabase insert failed:', err));
+}
+
+// Fetches the top 10 fastest times for a board (score = elapsed seconds, so
+// lowest first) from the shared Supabase leaderboard.
+async function fetchTopScores(game){
+  if (!sb) return [];
+  const { data, error } = await sb
+    .from('leaderboard')
+    .select('name, score')
+    .eq('game', game)
+    .order('score', { ascending: true })
+    .limit(10);
+  if (error){ console.error('Supabase fetch failed:', error); return []; }
+  return data || [];
+}
+
+// Renders the shared top-10 board into `mount`, using the same row markup as
+// the local renderBoard() above.
+async function renderSupabaseBoard(mount, game){
+  mount.innerHTML = '';
+  const rows = await fetchTopScores(game);
+  if (!rows.length){ mount.appendChild(el('div','lb-empty','No times yet — be the first.')); return; }
+  rows.forEach((r, i) => {
+    const row = el('div','lb-row r' + (i + 1));
+    row.appendChild(el('span','lb-rank', String(i + 1)));
+    row.appendChild(el('span','lb-name', r.name));
+    row.appendChild(el('span','lb-time', fmt(r.score)));
+    mount.appendChild(row);
+  });
+}
+
 // The consolidated page: one section per game, difficulty on a segmented
 // control so all nine boards are one tap apart and nothing has to reload.
 function buildBoardsPage(){
@@ -1146,6 +1212,7 @@ function resultsSheet(o){
       renderBoard($('#res-lb'), id, stamp);
       form.replaceWith(el('p','lb-added','Added to the board.'));
       confetti();
+      submitScoreToSupabase(nm, id, total);
     };
     btn.addEventListener('click', submit);
     input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
