@@ -8,8 +8,9 @@
 <!-- ═══════════════════════════════════════════════════════════════
      QUICK CUSTOMIZATION GUIDE
        Codes + where they lead ..... search "ROUTES" below
+       Background photo ............. search "BACKDROP" below
        Colours / fonts .............. --cream / --ink / --blue / --display / --body in :root
-       Background photo ............. --bg-image in :root (optional — see note there)
+       Loading screen ................ search "LOADING SCREEN" — your code goes in #loading
        Wrong-code message ............ search "that's not quite right"
      ═══════════════════════════════════════════════════════════════ -->
 
@@ -19,7 +20,6 @@
 
 <style>
 :root{
-  /* EDIT: same palette as the two invites — change here to re-theme the gate */
   --cream: #FAE7C6;
   --ink:   #451A03;
   --blue:  #5479A2;
@@ -27,92 +27,231 @@
   --display: "Alice", Georgia, serif;
   --body:    "Cormorant Garamond", Georgia, serif;
 
-  /* EDIT: optional — a photo behind the blur. Leave empty for a plain
-     cream backdrop instead: --bg-image: none; */
-  --bg-image: none;
-  /* --bg-image: url("gate-photo.jpg"); */
+  /* EDIT: BACKDROP — the photo behind the glass. Points at the same
+     already-optimized file the rest of the site uses (/shared/images/),
+     rather than a separate embedded copy, so this page stays light. To
+     swap it, point this at a different file in /shared/images/. */
+  --bg-image: url("/shared/images/hero.jpg");
 }
 
 *,*::before,*::after{ box-sizing:border-box; }
+html,body{ height:100%; }
 body{
-  margin:0; min-height:100svh; background:var(--cream); color:var(--ink);
+  margin:0; overflow:hidden; color:var(--ink);
   font-family:var(--body); display:grid; place-items:center;
   padding:1.5rem;
 }
+
+/* the photo itself, sharp, behind everything */
 .backdrop{
   position:fixed; inset:0; z-index:0;
   background:var(--bg-image) center/cover no-repeat, var(--cream);
-  filter:blur(18px) brightness(.96); transform:scale(1.08);
 }
+
+/* liquid glass — heavy blur + saturation lift + a bright rim, so it reads
+   as a pane of frosted glass sitting over the photo, not just a filter */
+.glass{
+  position:fixed; inset:0; z-index:1;
+  backdrop-filter:blur(28px) saturate(160%);
+  -webkit-backdrop-filter:blur(28px) saturate(160%);
+  background:linear-gradient(180deg, rgba(255,255,255,.20), rgba(255,255,255,.10));
+}
+.glass::before{
+  content:""; position:absolute; inset:0;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55);
+  pointer-events:none;
+}
+
 .panel{
-  position:relative; z-index:1; width:min(24rem,100%);
-  background:var(--blue); color:var(--white);
-  border:1px solid rgba(255,255,255,.5); border-radius:6px;
+  position:relative; z-index:2; width:min(23rem,100%);
+  background:rgba(255,255,255,.14);
+  backdrop-filter:blur(18px) saturate(160%);
+  -webkit-backdrop-filter:blur(18px) saturate(160%);
+  border:1px solid rgba(255,255,255,.55);
+  border-radius:10px;
   padding:clamp(2rem,5vw,2.75rem);
-  box-shadow:0 24px 60px rgba(69,26,3,.30);
-  text-align:center;
+  box-shadow:0 24px 60px rgba(69,26,3,.35), inset 0 1px 0 rgba(255,255,255,.6);
+  text-align:center; color:var(--ink);
+  transition:opacity .4s ease, transform .4s ease;
 }
 .panel h1{
   font-family:var(--display); font-weight:700; font-size:1.9rem;
-  margin:0 0 .3rem; line-height:1.1;
+  margin:0 0 .3rem; line-height:1.1; text-shadow:0 1px 10px rgba(255,255,255,.55);
 }
-.panel p{ margin:0 0 1.5rem; font-size:.95rem; opacity:.92; }
+.panel p{ margin:0 0 1.5rem; font-size:.95rem; opacity:.85; text-shadow:0 1px 8px rgba(255,255,255,.45); }
+.field{ position:relative; margin-bottom:.5rem; }
 .panel input{
   width:100%; font-family:var(--body); font-size:1.1rem; text-align:center;
   letter-spacing:.1em; text-transform:uppercase;
-  color:var(--ink); background:var(--white);
-  border:1px solid rgba(255,255,255,.6); border-radius:3px;
-  padding:.65rem .75rem; margin-bottom:1rem;
+  color:var(--ink); background:rgba(255,255,255,.85);
+  border:1px solid rgba(255,255,255,.7); border-radius:6px;
+  padding:.65rem 2.5rem .65rem .75rem;   /* room on the right for the arrow */
 }
-.panel button{
-  width:100%; cursor:pointer; font-family:var(--body); font-size:1rem;
-  letter-spacing:.1em; padding:.75rem 1rem;
-  color:var(--white); background:var(--ink);
-  border:1px solid var(--white); border-radius:3px;
-  transition:filter .2s ease;
+.arrow{
+  position:absolute; right:.35rem; top:50%; translate:0 -50%;
+  width:1.9rem; height:1.9rem; padding:0; cursor:pointer;
+  display:grid; place-items:center; border-radius:50%;
+  color:var(--ink); background:none; border:0;
+  transition:background .2s ease;
 }
-.panel button:hover{ filter:contrast(120%); }
+.arrow svg{ width:65%; height:65%; }
+.arrow:hover{ background:rgba(69,26,3,.14); }
 .error{
   min-height:1.2em; margin-top:.85rem; font-size:.85rem;
-  font-style:italic; color:#FFD9C7;
+  font-style:italic; color:#FFE1CB;
+}
+.panel.is-hidden{ opacity:0; transform:scale(.97); pointer-events:none; }
+
+/* ── LOADING SCREEN ──
+   Shown while photos preload, between a correct password and the redirect.
+   Swap the markup inside #loading and the CSS below for your own design —
+   everything else on the page leaves it alone. */
+#loading{
+  position:fixed; inset:0; z-index:3;
+  display:none; place-items:center;
+  background:var(--cream); color:var(--ink);
+}
+#loading.is-shown{ display:grid; }
+#loading p{ font-family:var(--display); font-size:1.2rem; margin-top:1.25rem; }
+#loading .loading-inner{ display:flex; flex-direction:column; align-items:center; }
+
+/* wine-glass loader — pasted as given, --size/--liquid etc still overridable inline */
+.wine-loader{
+  --size: 60px;
+  --liquid: #f6274e;
+  --liquid-back: #c9203f;
+  --glass: #000;
+  --duration: 3.5s;
+  --wobble: 2s;
+  width: var(--size);
+  height: auto;
+  display: block;
+}
+.wine-loader__rise{
+  transform-box: view-box;
+  animation: wine-rise var(--duration) ease-in-out infinite;
+}
+.wine-loader__wave{
+  transform-box: view-box;
+  fill: var(--liquid);
+  animation: wine-wobble var(--wobble) linear infinite;
+}
+.wine-loader__wave--back{
+  fill: var(--liquid-back);
+  animation-duration: calc(var(--wobble) * 1.45);
+  animation-direction: reverse;
+}
+.wine-loader__glass{
+  fill: none;
+  stroke: var(--glass);
+  stroke-width: 24;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+@keyframes wine-rise{
+  0%       { transform: translateY(372px); }
+  70%, 88% { transform: translateY(18px); }
+  100%     { transform: translateY(372px); }
+}
+@keyframes wine-wobble{
+  from { transform: translateX(0); }
+  to   { transform: translateX(-128px); }
+}
+@media (prefers-reduced-motion: reduce){
+  .wine-loader__rise{ animation: none; transform: translateY(18px); }
+  .wine-loader__wave{ animation: none; }
 }
 </style>
 </head>
 <body>
 
 <div class="backdrop" aria-hidden="true"></div>
+<div class="glass" aria-hidden="true"></div>
 
 <form class="panel" id="gate">
   <h1>Mark &amp; Bernadette</h1>
   <p>Enter the code from your invitation</p>
-  <input id="code" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" required>
-  <button type="submit">Enter</button>
+  <div class="field">
+    <input id="code" type="text" inputmode="text" autocomplete="off" autocapitalize="characters">
+    <button type="submit" class="arrow" aria-label="Submit">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14M13 6l6 6-6 6"/>
+      </svg>
+    </button>
+  </div>
   <p class="error" id="err"></p>
 </form>
 
+<!-- EDIT: LOADING SCREEN — swap colours via the --liquid / --liquid-back /
+     --size custom properties on .wine-loader below, or the wording in <p> -->
+<div id="loading">
+  <div class="loading-inner">
+    <svg class="wine-loader" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"
+         role="img" aria-label="Loading">
+      <defs>
+        <clipPath id="wine-bowl">
+          <path d="M152,12 L360,12 C368,86 384,152 384,206 C384,290 296,318 256,360
+                   C216,318 128,290 128,206 C128,152 144,86 152,12 Z"/>
+        </clipPath>
+        <path id="wine-wave"
+              d="M-128,0 q32,-9 64,0 t64,0 t64,0 t64,0 t64,0 t64,0 t64,0 t64,0 t64,0 t64,0
+                 L512,620 L-128,620 Z"/>
+      </defs>
+      <g clip-path="url(#wine-bowl)">
+        <g class="wine-loader__rise">
+          <use class="wine-loader__wave wine-loader__wave--back" href="#wine-wave" y="6"/>
+          <use class="wine-loader__wave" href="#wine-wave"/>
+        </g>
+      </g>
+      <path class="wine-loader__glass"
+            d="M152,12 L360,12 C368,86 384,152 384,206 C384,290 296,318 268,352
+               L268,468 C268,482 282,490 300,492 L344,496 C352,497 352,505 344,506
+               L168,506 C160,505 160,497 168,496 L212,492 C230,490 244,482 244,468
+               L244,352 C216,318 128,290 128,206 C128,152 144,86 152,12 Z"/>
+    </svg>
+    <p>Just a moment&hellip;</p>
+  </div>
+</div>
+
 <script>
-/* EDIT: ROUTES — the code someone enters, and the folder it sends them to.
-   Codes are matched case-insensitively. Add more lines the same way if
-   you ever need a third code. */
+/* EDIT: ROUTES — the code someone enters, and where it sends them */
 var ROUTES = {
   'MB16': '/one-day/',
   'MB17': '/two-day/'
 };
 
-var form = document.getElementById('gate');
-var input = document.getElementById('code');
-var err = document.getElementById('err');
+var form    = document.getElementById('gate');
+var input   = document.getElementById('code');
+var err     = document.getElementById('err');
+var loading = document.getElementById('loading');
 
 form.addEventListener('submit', function(e){
   e.preventDefault();
   var code = input.value.trim().toUpperCase();
+
+  if(!code){
+    err.textContent = "enter the code from your invite first";
+    input.focus();
+    return;
+  }
+
   var dest = ROUTES[code];
-  if(dest){
-    location.href = dest;
-  } else {
+  if(!dest){
     err.textContent = "that's not quite right — try the code on your invite";
     input.select();
+    return;
   }
+
+  form.classList.add('is-hidden');
+  loading.classList.add('is-shown');
+
+  function goToSite(){ location.href = dest; }
+
+  /* EDIT: this is a placeholder so you can see the loading screen working
+     right now. Once you're ready to actually wait for photos to preload,
+     replace this whole block with real preload logic that calls
+     goToSite() itself when done (e.g. Promise.all of Image() loads). */
+  setTimeout(goToSite, 2200);
 });
 </script>
 </body>
