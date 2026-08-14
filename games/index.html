@@ -737,7 +737,6 @@ const CONFIG = {
   shareTag    : 'B&M Connections',
   splashMs    : 2000,          // how long the yellow screen holds
   scoring: {
-    keepTop        : 3,        // times remembered per board
     hintPenalty    : 5,        // seconds per Strands hint / crossword Check
     mistakePenalty : 0,        // seconds per Connections mistake (0 = free)
     revealVoids    : true      // Reveal keeps a crossword run off the board
@@ -1058,80 +1057,58 @@ const GAME_META = {
   st: { name:'Strands',     tone:'g-mint',   list:() => DATA.strands }
 };
 
-// Scores live in this browser's storage, so each device keeps its own boards.
-// To share them across guests, swap the bodies of `all()` and `add()` for calls
-// to a hosted key-value store and make them async — only `renderBoard` and
-// `resultsSheet` read them. Shape per board: [{ n:name, t:seconds, d:stamp }].
-const Scores = {
-  all(){ return load('lb') || {}; },
-  get(id){ return (Scores.all()[id] || []).slice().sort((a,b) => a.t - b.t).slice(0, CONFIG.scoring.keepTop); },
-  qualifies(id, t){
-    const b = Scores.get(id);
-    return b.length < CONFIG.scoring.keepTop || t < b[b.length - 1].t;
-  },
-  add(id, name, t){
-    const stamp = Date.now();
-    const all = Scores.all();
-    const board = (all[id] || []).concat([{ n:(name || '').trim().slice(0,18) || 'Anonymous', t:t, d:stamp }]);
-    board.sort((a,b) => a.t - b.t);
-    all[id] = board.slice(0, CONFIG.scoring.keepTop);
-    save('lb', all);
-    return stamp;
-  },
-  name(){ return load('player') || ''; },
-  setName(n){ save('player', n); }
+// Just remembers what name was typed last, so the "Your name" field isn't
+// blank every time. Not leaderboard data -- the leaderboard itself lives
+// entirely in Supabase, below.
+const PlayerName = {
+  get(){ return load('player') || ''; },
+  set(n){ save('player', n); }
 };
 
-function renderBoard(mount, id, highlight){
+// Renders the shared top-10 board (score = elapsed seconds, so lowest
+// first) straight from Supabase. `highlight` is the just-inserted row's id,
+// if any, so that row can be marked as "you" in the list.
+async function renderBoard(mount, id, highlight){
   mount.innerHTML = '';
-  const rows = Scores.get(id);
-  if (!rows.length){ mount.appendChild(el('div','lb-empty','No times yet — be the first.')); return; }
-  rows.forEach((r, i) => {
-    const row = el('div','lb-row r' + (i + 1) + (highlight && r.d === highlight ? ' me' : ''));
-    row.appendChild(el('span','lb-rank', String(i + 1)));
-    row.appendChild(el('span','lb-name', r.n));
-    row.appendChild(el('span','lb-time', fmt(r.t)));
-    mount.appendChild(row);
-  });
-}
-
-// Supabase leaderboard: `game` matches the local board id shape, e.g. "xw:xw-easy".
-// Fire-and-forget — a failed insert (offline, RLS misconfigured, etc.) shouldn't
-// break the local leaderboard experience above.
-function submitScoreToSupabase(name, game, score){
-  if (!sb) return;
-  sb.from('leaderboard').insert({ name: name, game: game, score: score })
-    .then(({ error }) => { if (error) console.error('Supabase insert failed:', error); })
-    .catch(err => console.error('Supabase insert failed:', err));
-}
-
-// Fetches the top 10 fastest times for a board (score = elapsed seconds, so
-// lowest first) from the shared Supabase leaderboard.
-async function fetchTopScores(game){
-  if (!sb) return [];
+  if (!sb){
+    mount.appendChild(el('div','lb-empty', "Can't reach the leaderboard right now."));
+    return;
+  }
   const { data, error } = await sb
     .from('leaderboard')
-    .select('name, score')
-    .eq('game', game)
+    .select('id, name, score')
+    .eq('game', id)
     .order('score', { ascending: true })
     .limit(10);
-  if (error){ console.error('Supabase fetch failed:', error); return []; }
-  return data || [];
-}
-
-// Renders the shared top-10 board into `mount`, using the same row markup as
-// the local renderBoard() above.
-async function renderSupabaseBoard(mount, game){
   mount.innerHTML = '';
-  const rows = await fetchTopScores(game);
+  if (error){
+    console.error('Supabase fetch failed:', error);
+    mount.appendChild(el('div','lb-empty', "Couldn't load the leaderboard right now."));
+    return;
+  }
+  const rows = data || [];
   if (!rows.length){ mount.appendChild(el('div','lb-empty','No times yet — be the first.')); return; }
   rows.forEach((r, i) => {
-    const row = el('div','lb-row r' + (i + 1));
+    const row = el('div','lb-row r' + (i + 1) + (highlight != null && r.id === highlight ? ' me' : ''));
     row.appendChild(el('span','lb-rank', String(i + 1)));
     row.appendChild(el('span','lb-name', r.name));
     row.appendChild(el('span','lb-time', fmt(r.score)));
     mount.appendChild(row);
   });
+}
+
+// `game` is the board id shape used throughout, e.g. "xw:xw-easy". Returns
+// the inserted row's id (for highlighting it in the board just rendered) or
+// null if the insert failed -- a failed insert shouldn't crash the sheet.
+async function submitScoreToSupabase(name, game, score){
+  if (!sb) return null;
+  const { data, error } = await sb
+    .from('leaderboard')
+    .insert({ name: name, game: game, score: score })
+    .select('id')
+    .single();
+  if (error){ console.error('Supabase insert failed:', error); return null; }
+  return data ? data.id : null;
 }
 
 // The consolidated page: one section per game, difficulty on a segmented
@@ -1186,7 +1163,6 @@ function resultsSheet(o){
   const id = o.game + ':' + o.puzzleId;
   const total = o.secs + o.penalty;
   const ranked = !o.unranked;
-  const qualifies = ranked && Scores.qualifies(id, total);
 
   let html = '<div class="kicker">' + o.kicker + '</div><h3>' + o.title + '</h3>';
   if (o.blurb) html += '<p>' + o.blurb + '</p>';
@@ -1196,23 +1172,34 @@ function resultsSheet(o){
         + '<div class="score-line total"><span>Final</span><b>' + (ranked ? fmt(total) : '—') + '</b></div></div>';
   if (!ranked && o.note) html += '<p class="note">' + o.note + '</p>';
   html += '<div class="lb-head">' + GAME_META[o.game].name + ' · ' + o.label + '</div><div id="res-lb"></div>';
-  if (qualifies) html += '<div class="lb-form"><input id="lb-name" maxlength="18" placeholder="Your name" autocomplete="name"><button class="pill" id="lb-add">Add time</button></div>';
+  if (ranked) html += '<div class="lb-form"><input id="lb-name" maxlength="18" placeholder="Your name" autocomplete="name"><button class="pill" id="lb-add">Add time</button></div>';
   html += '<button class="cta" data-close-sheet>Close</button>';
 
   openSheet(html);
   renderBoard($('#res-lb'), id);
 
-  if (qualifies){
+  if (ranked){
     const input = $('#lb-name'), btn = $('#lb-add'), form = $('.lb-form');
-    input.value = Scores.name();
-    const submit = () => {
+    input.value = PlayerName.get();
+    let submitting = false;
+    const submit = async () => {
+      if (submitting) return;
+      submitting = true;
+      btn.disabled = true;
+      btn.textContent = 'Adding…';
       const nm = input.value.trim() || 'Anonymous';
-      Scores.setName(nm);
-      const stamp = Scores.add(id, nm, total);
-      renderBoard($('#res-lb'), id, stamp);
+      PlayerName.set(nm);
+      const insertedId = await submitScoreToSupabase(nm, id, total);
+      if (insertedId == null){
+        submitting = false;
+        btn.disabled = false;
+        btn.textContent = 'Add time';
+        toast("Couldn't save your time — try again");
+        return;
+      }
+      await renderBoard($('#res-lb'), id, insertedId);
       form.replaceWith(el('p','lb-added','Added to the board.'));
       confetti();
-      submitScoreToSupabase(nm, id, total);
     };
     btn.addEventListener('click', submit);
     input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
