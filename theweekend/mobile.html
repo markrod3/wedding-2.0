@@ -5,55 +5,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mark &amp; Bernadette — 16.01.27</title>
 
-<!-- ═══════════════════════════════════════════════════════════════════════
-     QUICK CUSTOMIZATION GUIDE
-     One file, no build step — search for these markers to find each thing.
-     Every editable spot is also flagged inline with an "EDIT:" comment.
-
-       Names / dates / tagline ..... search "hero__names", "hero__date"
-       Fonts ........................ --display / --body, in :root below
-       Colours ...................... --cream / --ink / --blue, in :root below
-       Photos (7 backgrounds) ....... --img-*, in :root below — one line each
-       Flowing photo strip (16) ..... search "YOUR PHOTOS" (near the bottom)
-       Schedule (times/venues/etc) .. search "const items" (near the bottom)
-       Map links ..................... same block, 3rd item in each row
-       RSVP button destination ...... search "RSVP_URL"
-       Game links .................... search "point at the games"
-       Nav menu items ................ search "sidenav"
-     ═══════════════════════════════════════════════════════════════════════ -->
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- EDIT: swap fonts here — pick any two from fonts.google.com and update
-     --display / --body below to match -->
 <link href="https://fonts.googleapis.com/css2?family=Alice&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
 
 <style>
 
-/* ═══════════════════════ TOKENS — edit these first ═══════════════════════ */
+/* ═══════════════════════ TOKENS ═══════════════════════ */
 :root{
-  /* ── EDIT: colour palette — used throughout via var(--name) ── */
-  --cream: #FAE7C6;   /* page background, light text on dark photos      */
-  --ink:   #451A03;   /* body text, dark UI on light backgrounds         */
-  --blue:  #5479A2;   /* RSVP popup and the accent behind it             */
+  --cream: #FAE7C6;
+  --ink:   #451A03;
+  --blue:  #5479A2;
   --white: #FFFFFF;
 
-  /* ── EDIT: fonts — --display is headings/names, --body is everything else ── */
-  --display: "Alice", Georgia, serif;
-  --body:    "Cormorant Garamond", Georgia, serif;
+  --display: "Alice", Georgia, serif;                          /* all titles */
+  --body:    "Cormorant Garamond", Georgia, serif;             /* nav, date, everything else */
 
-  /* ── EDIT: the 7 full-bleed photos — one line each, filename only ──
-     Swap a photo by replacing the file in images/ and updating its path here.
-     Keep the variable names (--img-lawn etc.) — the CSS and JS below both
-     read from these, so nothing else needs to change. */
-  --img-lawn:    url("/shared/images/hero.jpg");      /* hero background               */
-  --img-tree:    url("/shared/images/rsvp.jpg");      /* rsvp band background          */
-  --img-bouquet: url("/shared/images/bouquet.jpg");   /* schedule: photo-only panel    */
-  --img-sat:     url("/shared/images/sat.jpeg");       /* schedule: Saturday panel      */
-  --img-sip:     url("/shared/images/sip.jpg");       /* schedule: photo-only panel    */
-  --img-bigtree: url("/shared/images/bigtree.jpg");   /* games section framed photo    */
 
-  /* ── layout tuning — safe to leave alone ── */
+  /* EDIT: the three photos — each defined once, used by CSS and by the accordion */
+  --img-lawn:   url("/shared/images/hero.jpg");
+  --img-tree:   url("/shared/images/rsvp.jpg");
+  --img-bouquet: url("/shared/images/bouquet.jpg");
+  --img-sat:    url("/shared/images/sat.jpeg");
+  --img-sun:    url("/shared/images/sun.jpeg");
+  --img-sip:     url("/shared/images/sip.jpg");
+  --img-bigtree: url("/shared/images/bigtree.jpg");
   --gutter: clamp(1.25rem,6vw,6rem);   /* symmetric side padding — the nav sits at the bottom now */
   --mq-h:   clamp(280px,72vw,1100px);  /* the marquee band's own height */
   --mq-lap: clamp(1.75rem,3vw,3rem);   /* how far it tucks under each neighbour */
@@ -290,6 +266,12 @@ a{ color:inherit; text-decoration:none; }
   user-select:none; -webkit-user-drag:none;
 }
 
+/* bigger tiles on small screens, since the whole stage scales down */
+@media (max-width:767px){
+}
+
+
+
 /* ═══════════════════════ RSVP BUTTON + POPUP ═══════════════════════ */
 .rsvp-btn{
   position:fixed; top:50%; left:14%; translate:0 -50%;
@@ -404,6 +386,7 @@ a{ color:inherit; text-decoration:none; }
   --panel-radius:     16px;
   --panel-gap:        12px;
   --overlay:          0.40;   /* darkness over a closed panel       */
+  --scroll-per-panel: 70vh;   /* how far you scroll per panel       */
   --glide:            0.14;   /* 0.05 = floaty, 0.35 = tight        */
   --caption-open:     24px;
   --caption-closed:   96px;
@@ -599,7 +582,7 @@ a{ color:inherit; text-decoration:none; }
 <header class="band hero" id="home">
 
   <div class="hero__inner">
-    <p class="hero__date">16.01.27</p>
+    <p class="hero__date"><span>16.01.27</span><span>17.01.27</span></p>
     <h1 class="hero__names">Mark&nbsp;&amp;&nbsp;Bernadette</h1>
     <p class="hero__sub">we're getting married!</p>
   </div>
@@ -627,6 +610,7 @@ a{ color:inherit; text-decoration:none; }
   </div>
 </section>
 
+<!-- ═══════════ THE BIG DAY ═══════════ -->
 <!-- ═══════════ EARLY RSVP ═══════════ -->
 <section class="rsvp-early" id="rsvp-early">
   <button class="rsvp-early__btn" id="rsvpEarlyBtn" aria-haspopup="dialog">
@@ -641,7 +625,6 @@ a{ color:inherit; text-decoration:none; }
   </button>
 </section>
 
-<!-- ═══════════ SCHEDULE ═══════════ -->
 <div class="page">
   <div class="scroll-wrap" id="info">
     <div class="stage">
@@ -650,7 +633,7 @@ a{ color:inherit; text-decoration:none; }
         <div class="stage__text">
           <h2 class="headline">Schedule</h2>
           <div class="ticks" id="ticks"></div>
-          <p class="swipe-hint">swipe to explore</p>
+          <p class="swipe-hint">swipe to see each day</p>
         </div>
 
         <div class="stage__media">
@@ -765,21 +748,21 @@ a{ color:inherit; text-decoration:none; }
                 stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </a>
+      <script>
+      // EDIT: remembers this invite (day + mobile/web) so the games page's
+      // back button can return here. Reused by /games/index.html via the
+      // same "bm-games:origin" localStorage key.
+      (function(){
+        document.querySelectorAll('.games-link').forEach(function(link){
+          link.addEventListener('click', function(){
+            try { localStorage.setItem('bm-games:origin', JSON.stringify({ day: 'theweekend', variant: 'mobile' })); }
+            catch (e) {}
+          });
+        });
+      })();
+      </script>
 
     </nav>
-    <script>
-    // EDIT: remembers this invite (day + mobile/web) so the games page's back
-    // button can return here. Reused by /games/index.html via the same
-    // "bm-games:origin" localStorage key.
-    (function(){
-      document.querySelectorAll('.games-link').forEach(function(link){
-        link.addEventListener('click', function(){
-          try { localStorage.setItem('bm-games:origin', JSON.stringify({ day: 'one-day', variant: 'mobile' })); }
-          catch (e) {}
-        });
-      });
-    })();
-    </script>
 
     <div class="figure fade">
       <svg class="figure__frame" viewBox="0 0 400 520" preserveAspectRatio="none" aria-hidden="true">
@@ -896,12 +879,12 @@ a{ color:inherit; text-decoration:none; }
     tree:   cssImg('--img-tree'),
     lawn:   cssImg('--img-lawn'),
     sat:    cssImg('--img-sat'),
+    sun:    cssImg('--img-sun'),
     sip:     cssImg('--img-sip'),
     bigtree: cssImg('--img-bigtree')
   };
 
   const items = [
-    { title: '', image: IMG.bouquet },
     {
       title: 'Saturday, 16th January',
       image: IMG.sat,
@@ -914,6 +897,19 @@ a{ color:inherit; text-decoration:none; }
         ['Getting here', 'Nearest MRT: Farrer Road\nParking is available in the church basement, or at the open-air carpark at 8 Victoria Park Road']
       ]
     },
+    { title: '', image: IMG.bouquet },
+    {
+      title: 'Sunday, 17th January',
+      image: IMG.sun,
+      heading: 'Wedding Lunch',
+      rows: [
+        ['Date',         'Sunday, 17 January 2027'],
+        ['Time',         'Cocktails at 11.00am, followed by lunch at 12.00pm'],
+        ['Venue',        'Bottega di Carna, Mondrian Hotel, 16A Duxton Hill', 'https://maps.app.goo.gl/VFHqfpgZcw6sK2PU6'],
+        ['Dress code',   'Colours inspired by the flowers of this invitation!'],
+        ['Getting here', 'Parking in the hotel is limited. More parking is available at Craig Place or street-side along Duxton Hill']
+      ]
+    },
     { title: '', image: IMG.sip }
   ];
 
@@ -924,6 +920,7 @@ a{ color:inherit; text-decoration:none; }
 
   const N    = items.length;
   const LAST = Math.max(N - 1, 1);
+  wrap.style.setProperty('--panel-count', N);
 
   items.forEach(function(item, i){
     const panel = document.createElement('button');
