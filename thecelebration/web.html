@@ -5,65 +5,65 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mark &amp; Bernadette — 16.01.27</title>
 
-<!-- ═══════════════════════════════════════════════════════════════════════
-     QUICK CUSTOMIZATION GUIDE
-     One file, no build step — search for these markers to find each thing.
-     Every editable spot is also flagged inline with an "EDIT:" comment.
-
-       Names / dates / tagline ..... search "hero__names", "hero__date"
-       Fonts ........................ --display / --body, in :root below
-       Colours ...................... --cream / --ink / --blue, in :root below
-       Photos (7 backgrounds) ....... --img-*, in :root below — one line each
-       Flowing photo strip (16) ..... search "YOUR PHOTOS" (near the bottom)
-       Schedule (times/venues/etc) .. search "const items" (near the bottom)
-       Map links ..................... same block, 3rd item in each row
-       RSVP button destination ...... search "RSVP_URL"
-       Game links .................... search "point at the games"
-       Nav menu items ................ search "sidenav"
-     ═══════════════════════════════════════════════════════════════════════ -->
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- EDIT: swap fonts here — pick any two from fonts.google.com and update
-     --display / --body below to match -->
 <link href="https://fonts.googleapis.com/css2?family=Alice&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     DESKTOP / WEB EDITION
+     Same content as the mobile invite, re-laid for a landscape screen and
+     driven by the pointer rather than by scrolling.
+
+     What changed from the mobile build:
+       · nav moved from a bottom thumb-pill to a top bar
+       · hero split across the width, with a mouse-parallax backdrop
+       · marquee: hover slows the flow and lifts a photo; click opens it
+       · schedule: panels open on HOVER, click pins one open
+       · rsvp buttons are magnetic — they lean toward the cursor
+       · games: copy + dock on the left, framed photo on the right
+
+     WHERE TO EDIT
+       1. TOKENS ......... colours, fonts, photos, spacing
+       2. SECTION CSS .... one block per section, in page order
+       3. MARKUP ......... body, in page order
+       4. SCRIPTS ........ page chrome / schedule / marquee / dock
+     ══════════════════════════════════════════════════════════════════ -->
 
 <style>
 
-/* ═══════════════════════ TOKENS — edit these first ═══════════════════════ */
+/* ═══════════════════════ 1. TOKENS ═══════════════════════ */
 :root{
-  /* ── EDIT: colour palette — used throughout via var(--name) ── */
-  --cream: #FAE7C6;   /* page background, light text on dark photos      */
-  --ink:   #451A03;   /* body text, dark UI on light backgrounds         */
-  --blue:  #5479A2;   /* RSVP popup and the accent behind it             */
+  --cream: #FAE7C6;
+  --ink:   #451A03;
+  --blue:  #5479A2;
   --white: #FFFFFF;
 
-  /* ── EDIT: fonts — --display is headings/names, --body is everything else ── */
-  --display: "Alice", Georgia, serif;
-  --body:    "Cormorant Garamond", Georgia, serif;
+  --display: "Alice", Georgia, serif;                          /* all titles */
+  --body:    "Cormorant Garamond", Georgia, serif;             /* nav, date, everything else */
 
-  /* ── EDIT: the 7 full-bleed photos — one line each, filename only ──
-     Swap a photo by replacing the file in images/ and updating its path here.
-     Keep the variable names (--img-lawn etc.) — the CSS and JS below both
-     read from these, so nothing else needs to change. */
-  --img-lawn:    url("/shared/images/hero.jpg");      /* hero background               */
-  --img-tree:    url("/shared/images/rsvp.jpg");      /* rsvp band background          */
-  --img-bouquet: url("/shared/images/bouquet.jpg");   /* schedule: photo-only panel    */
-  --img-sat:     url("/shared/images/sat.jpeg");       /* schedule: Saturday panel      */
-  --img-sip:     url("/shared/images/sip.jpg");       /* schedule: photo-only panel    */
-  --img-bigtree: url("/shared/images/bigtree.jpg");   /* games section framed photo    */
 
-  /* ── layout tuning — safe to leave alone ── */
-  --gutter: clamp(1.25rem,6vw,6rem);   /* symmetric side padding — the nav sits at the bottom now */
-  --mq-h:   clamp(280px,72vw,1100px);  /* the marquee band's own height */
-  --mq-lap: clamp(1.75rem,3vw,3rem);   /* how far it tucks under each neighbour */
+  /* EDIT: the photos — each defined once, used by CSS and by the accordion */
+  --img-lawn:   url("/shared/images/hero.jpg");
+  --img-tree:   url("/shared/images/rsvp.jpg");
+  --img-bouquet: url("/shared/images/bouquet.jpg");
+  --img-sat:    url("/shared/images/sat.jpeg");
+  --img-sip:     url("/shared/images/sip.jpg");
+  --img-bigtree: url("/shared/images/bigtree.jpg");
+  /* layout rhythm — wider gutters than mobile, capped so text never sprawls */
+  --gutter:  clamp(1.5rem, 5vw, 7rem);
+  --measure: 1400px;                   /* the widest anything gets */
+
+  --mq-h:   clamp(360px, 38vw, 680px); /* the marquee band's own height */
+  --mq-lap: clamp(2rem, 3vw, 3.5rem);  /* how far it tucks under each neighbour */
+
+  --nav-h:  4.5rem;                    /* space the fixed top bar occupies */
 }
 
 *,*::before,*::after{ box-sizing:border-box; }
 html{ scroll-behavior:smooth; }
 body{
   margin:0; background:var(--cream); color:var(--ink);
-  font-family:var(--body); font-size:clamp(1rem,.35vw + .95rem,1.15rem);
+  font-family:var(--body); font-size:clamp(1.02rem,.3vw + .95rem,1.2rem);
   line-height:1.7; font-weight:400;
   overflow-x:clip; -webkit-font-smoothing:antialiased;   /* clip, not hidden — hidden breaks position:sticky */
 }
@@ -71,12 +71,13 @@ img{ max-width:100%; display:block; }
 a{ color:inherit; text-decoration:none; }
 :focus-visible{ outline:2px solid currentColor; outline-offset:4px; }
 
-/* ═══════════════════════ FIXED CHROME ═══════════════════════ */
+/* ═══════════════════════ 2. TOP NAV ═══════════════════════ */
+/* Desktop puts the menu where the eye starts, not where the thumb sits. */
 .sidenav{
-  position:fixed; left:50%; bottom:clamp(.8rem,2.4vh,1.5rem); translate:-50% 0;
+  position:fixed; left:50%; top:clamp(1rem,2.2vh,1.75rem); translate:-50% 0;
   z-index:70; color:var(--ink);
   padding:.4rem .45rem; border-radius:999px;
-  max-width:calc(100% - 1.5rem);
+  max-width:calc(100% - 2rem);
   /* liquid glass: translucent fill, heavy blur, bright rim + specular top edge */
   background:linear-gradient(180deg, rgba(255,255,255,.58), rgba(255,255,255,.26));
   backdrop-filter:blur(22px) saturate(190%);
@@ -88,6 +89,7 @@ a{ color:inherit; text-decoration:none; }
     0 10px 32px rgba(69,26,3,.20),
     0 2px 8px rgba(69,26,3,.12);
   isolation:isolate;
+  transition:opacity .4s ease, transform .5s cubic-bezier(.2,.8,.3,1);
 }
 /* the highlight that sells the glass */
 .sidenav::before{
@@ -100,11 +102,11 @@ a{ color:inherit; text-decoration:none; }
 .sidenav li{ margin:0; }
 .sidenav a{
   position:relative; display:flex; align-items:center; gap:.4rem;
-  padding:.42rem .9rem; border-radius:999px; white-space:nowrap;
-  font-size:clamp(.88rem,1.1vw,1.05rem); line-height:1.2;
-  opacity:.72; transition:opacity .3s ease, background .3s ease;
+  padding:.45rem 1.05rem; border-radius:999px; white-space:nowrap;
+  font-size:clamp(.95rem,.9vw,1.08rem); line-height:1.2;
+  opacity:.7; transition:opacity .3s ease, background .3s ease;
 }
-.sidenav a:hover{ opacity:1; background:rgba(255,255,255,.35); }
+.sidenav a:hover{ opacity:1; background:rgba(255,255,255,.45); }
 .sidenav a.is-current{ opacity:1; }
 .sidenav .star{
   width:12px; flex:none; opacity:0;
@@ -114,71 +116,70 @@ a{ color:inherit; text-decoration:none; }
 .sidenav a.is-current .star{ opacity:1; transform:scale(1) rotate(0); }
 .sidenav .star svg{ width:100%; height:auto; fill:currentColor; }
 @media (max-width:600px){
-  .sidenav a{ padding:.4rem .65rem; font-size:.82rem; gap:.3rem; }
+  .sidenav a{ padding:.4rem .65rem; font-size:.85rem; gap:.3rem; }
   .sidenav .star{ width:10px; }
 }
 
-/* ═══════════════════════ PHOTO BANDS ═══════════════════════ */
-.band{
-  position:relative; color:var(--white);
-  background-size:cover; background-repeat:no-repeat;
-}
-.band::after{
-  content:""; position:absolute; inset:0; pointer-events:none;
-  background:linear-gradient(180deg,rgba(0,0,0,.22),rgba(0,0,0,.04) 40%,rgba(0,0,0,.16));
-}
-
-/* hero — wide garden shot */
+/* ═══════════════════════ 3. HERO ═══════════════════════ */
+/* Landscape composition: dates ride the top corners, names span the middle.
+   The backdrop drifts against the cursor — the page's first hover cue. */
 .hero{
-  background-image:var(--img-lawn);
-  background-position:left center;
-  min-height:100svh;
+  position:relative; overflow:hidden;
+  min-height:100vh; min-height:100svh;
+  color:var(--white);
+  --px:0; --py:0;
+}
+.hero__bg{
+  position:absolute; inset:-5%;
+  background:var(--img-lawn) center/cover no-repeat;
+  transform:translate3d(calc(var(--px) * -18px), calc(var(--py) * -14px), 0) scale(1.02);
+  transition:transform .9s cubic-bezier(.2,.8,.3,1);
+  will-change:transform;
+}
+.hero::after{
+  content:""; position:absolute; inset:0; pointer-events:none; z-index:1;
+  background:linear-gradient(180deg,rgba(0,0,0,.20),rgba(0,0,0,.02) 38%,rgba(0,0,0,.18));
 }
 .hero__inner{
   position:relative; z-index:2; min-height:inherit;
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  max-width:var(--measure); margin-inline:auto;
+  display:grid; align-content:center; justify-items:center;
   text-align:center;
-  /* asymmetric padding shifts the centred block up: less room above,
-     more below, so the dates sit higher in the frame */
-  padding:clamp(.5rem,1.5vh,1.25rem) var(--gutter) clamp(8rem,16vh,11rem);
+  padding:calc(var(--nav-h) + 2rem) var(--gutter) clamp(9rem,20vh,14rem);
 }
-.hero__date{
-  font-size:clamp(1.1rem,1.9vw,1.6rem); letter-spacing:.16em;
-  font-weight:400; margin:0 0 clamp(7.5rem,27vh,21rem);
-  line-height:1.4;
-  /* the date sits high, over pale sky — brown reads there where white doesn't */
-  color:var(--ink);
-  text-shadow:0 1px 12px rgba(255,255,255,.45);
-}
-.hero__date span{ display:block; }
 .hero__names{
   font-family:var(--display); font-weight:700;
-  font-size:clamp(2rem,7.4vw,6.4rem); line-height:1.04; letter-spacing:-.01em;
+  font-size:clamp(2.4rem,8.2vw,7.5rem); line-height:1.02; letter-spacing:-.015em;
   margin:0; text-wrap:balance;
-  text-shadow:0 2px 26px rgba(0,0,0,.28);
+  text-shadow:0 2px 30px rgba(0,0,0,.30);
+  transform:translate3d(calc(var(--px) * 9px), calc(var(--py) * 7px), 0);
+  transition:transform .9s cubic-bezier(.2,.8,.3,1);
+}
+/* the date, then the news beneath it. Both sit over the mid-tone of the
+   photo, where white reads cleanly. */
+.hero__dates{
+  display:flex; align-items:center; justify-content:center; flex-wrap:wrap;
+  gap:clamp(.75rem,1.8vw,1.75rem);
+  margin:clamp(1rem,2.5vh,2rem) 0 0;
+  text-shadow:0 2px 18px rgba(0,0,0,.45);
+}
+.hero__dates .d{ font-size:clamp(.95rem,1.15vw,1.3rem); letter-spacing:.24em; }
+.hero__dates .rule{
+  width:clamp(24px,5vw,96px); height:1px; flex:none;
+  background:rgba(255,255,255,.65);
 }
 .hero__sub{
-  font-size:clamp(1.05rem,1.6vw,1.45rem); font-style:italic; font-weight:300;
-  margin:clamp(.75rem,2vh,1.5rem) 0 0;
+  margin:clamp(.6rem,1.4vh,1.1rem) 0 0;
+  font-style:italic; font-weight:300; letter-spacing:.03em;
+  font-size:clamp(1.1rem,1.5vw,1.6rem);
+  text-shadow:0 2px 18px rgba(0,0,0,.45);
 }
+@media (max-width:560px){ .hero__dates .rule{ display:none; } }
 
-
-/* rsvp band — tall tree shot, anchored low so the couple stays in frame */
-.rsvp-band{
-  background-image:var(--img-tree);
-  background-position:center 88%;
-  min-height:110vh;
-}
-
-
-/* ═══════════════════════ HERO PHOTO MARQUEE ═══════════════════════ */
-/* Rides the bottom edge of the hero and spills a little onto the
-   cream below. Everything is .mqp- prefixed so it can't collide.
-   --mq-h drives the band; the width follows it so the padded
-   996:569 artboard always fits whole and nothing gets clipped. */
-/* Section 1.5 — the marquee's own strip. It tucks a little under the hero
-   above and under the cream section below, so the photos still bridge the
-   two rather than sitting in a sealed-off box. */
+/* ═══════════════════════ 4. PHOTO MARQUEE ═══════════════════════ */
+/* Rides the bottom edge of the hero and spills onto the cream below.
+   Desktop behaviour: hovering slows the flow and lifts the photo under the
+   cursor; clicking opens it large to the left. */
 .marquee-band{
   position:relative; z-index:5;
   height:var(--mq-h);
@@ -194,20 +195,20 @@ a{ color:inherit; text-decoration:none; }
   transition:transform .6s cubic-bezier(.2,.8,.3,1);
 }
 
-/* nudge to tap — same face as the menu */
+/* nudge to hover — same face as the menu */
 .mq-hint{
-  position:absolute; top:clamp(1rem,13%,4.5rem);
-  right:clamp(1.25rem,11vw,11rem);
+  position:absolute; top:clamp(1rem,12%,4rem);
+  right:clamp(1.25rem,9vw,9rem);
   z-index:6; pointer-events:none; margin:0;
   font-family:var(--body); font-style:italic;
-  font-size:clamp(.95rem,1.35vw,1.25rem); letter-spacing:.02em;
+  font-size:clamp(.95rem,1.15vw,1.25rem); letter-spacing:.02em;
   color:rgba(69,26,3,.62);
   transform:rotate(-5deg); transform-origin:center;
   transition:opacity .35s ease;
 }
 .marquee-band.is-open .mq-hint{ opacity:0; }
 
-/* click a photo and it opens out; click the open photo to close it */
+/* the opened photo */
 .mq-expand{
   position:absolute; z-index:6; cursor:pointer;
   opacity:0; visibility:hidden; pointer-events:none;
@@ -222,20 +223,17 @@ a{ color:inherit; text-decoration:none; }
 /* desktop: photo takes the left, the marquee slides right to make room */
 @media (min-width:768px){
   .mq-expand{
-    left:var(--gutter); top:6%; bottom:6%;
-    width:min(38%,520px); transform:translateX(-28px) scale(.97);
+    left:var(--gutter); top:5%; bottom:5%;
+    width:min(34%,460px); transform:translateX(-28px) scale(.97);
   }
   .marquee-band.is-open .mq-expand{ transform:none; }
-  .marquee-band.is-open .hero__marquee{ transform:translateX(30%); }
+  .marquee-band.is-open .hero__marquee{ transform:translateX(26%); }
 }
 
-/* phone: photo opens below the marquee and the band grows with it,
-   so the section underneath is pushed down rather than covered */
+/* phone fallback: photo opens below the marquee and the band grows with it */
 @media (max-width:767px){
   .marquee-band{ --mq-exp-h:56vh; }
-  .marquee-band.is-open{
-    height:calc(var(--mq-h) + var(--mq-exp-h) + 1.25rem);
-  }
+  .marquee-band.is-open{ height:calc(var(--mq-h) + var(--mq-exp-h) + 1.25rem); }
   .mq-expand{
     left:1rem; right:1rem; top:calc(var(--mq-h) + .5rem); height:var(--mq-exp-h);
     transform:translateY(-18px) scale(.98);
@@ -244,11 +242,16 @@ a{ color:inherit; text-decoration:none; }
 }
 
 @media (prefers-reduced-motion:reduce){
-  .hero__marquee, .mq-expand{ transition-duration:.01ms; }
+  .hero__bg, .hero__names, .hero__marquee, .mq-expand{ transition-duration:.01ms; }
 }
 
+.mqp-probe{
+  position:absolute; top:0; left:0; height:0;
+  width:var(--mqp-tile-px);   /* measured by the engine — never seen */
+  visibility:hidden; pointer-events:none;
+}
 .mqp-root{
-  --mqp-tile-px:clamp(56px,9vw,130px);   /* on-screen tile width */
+  --mqp-tile-px:clamp(76px,5.9vw,101px);   /* on-screen tile width -- 0.6x */
   --mqp-tile-w:72px;          /* recomputed by the engine from --mqp-tile-px */
   --mqp-tile-h:96px;
   --mqp-radius:3px;
@@ -284,22 +287,38 @@ a{ color:inherit; text-decoration:none; }
   width:100%; height:100%; overflow:hidden;
   border-radius:var(--mqp-radius); box-shadow:var(--mqp-shadow);
   background:rgba(250,231,198,.35);   /* placeholder while photos load */
+  transition:transform .35s cubic-bezier(.2,.8,.3,1), box-shadow .35s ease;
 }
 .mqp-tile img{
   width:100%; height:100%; object-fit:cover; display:block;
   user-select:none; -webkit-user-drag:none;
 }
 
-/* ═══════════════════════ RSVP BUTTON + POPUP ═══════════════════════ */
+/* hover lift — the tile under the cursor grows and comes to the front.
+   z-index is set inline by the rolling-depth engine, hence !important. */
+@media (hover:hover) and (pointer:fine){
+  .mqp-item{ cursor:pointer; }
+  .mqp-item:hover{ z-index:60 !important; }
+  .mqp-item:hover .mqp-tile{
+    transform:scale(1.18);
+    box-shadow:0 2px 6px rgba(0,0,0,.24), 0 22px 48px rgba(0,0,0,.30);
+  }
+}
+@media (prefers-reduced-motion:reduce){
+  .mqp-tile{ transition-duration:.01ms; }
+}
+
+/* ═══════════════════════ 5. RSVP BUTTON + POPUP ═══════════════════════ */
 .rsvp-btn{
   position:fixed; top:50%; left:14%; translate:0 -50%;
-  z-index:65; width:clamp(120px,13vw,190px);
+  z-index:65; width:clamp(140px,12vw,200px);
   opacity:0; visibility:hidden; cursor:pointer;
   background:none; border:0; padding:0; color:var(--white);
   filter:drop-shadow(0 2px 14px rgba(0,0,0,.35));
-  transition:opacity .5s ease, visibility .5s ease;
+  transition:opacity .5s ease, visibility .5s ease, transform .35s cubic-bezier(.2,.8,.3,1);
 }
 .rsvp-btn.is-shown{ opacity:1; visibility:visible; }
+.rsvp-btn.is-pulled{ transition:transform .12s linear; }   /* magnet: follow, don't lag */
 .rsvp-btn svg{ width:100%; height:auto; overflow:visible; }
 .rsvp-btn .frame{
   fill:none; stroke:currentColor; stroke-width:3;
@@ -310,25 +329,27 @@ a{ color:inherit; text-decoration:none; }
 .rsvp-btn .word{ font-family:var(--display); font-weight:700; font-size:46px; letter-spacing:.04em; fill:currentColor; }
 .rsvp-btn:hover .frame{ transform:translate(-1px,2px); }
 .rsvp-btn:hover .ticks{ stroke-dashoffset:-4; }
-@media (min-width:1024px){ .rsvp-btn{ left:21%; } }
+@media (min-width:1024px){ .rsvp-btn{ left:19%; } }
 
 .popup{ position:fixed; inset:0; z-index:90; display:none; }
 .popup.is-open{ display:block; }
 .popup__bg{ position:absolute; inset:0; background:rgba(69,26,3,.55); backdrop-filter:blur(3px); }
 .popup__panel{
   position:absolute; top:50%; left:50%; translate:-50% -50%;
-  width:min(28rem,92vw); max-height:88vh; overflow-y:auto;
+  width:min(30rem,92vw); max-height:88vh; overflow-y:auto;
   background:var(--blue); color:var(--white);
   border:1px solid rgba(255,255,255,.5); border-radius:4px;
-  padding:clamp(1.75rem,4vw,2.75rem);
+  padding:clamp(1.75rem,3vw,2.9rem);
   animation:pop .45s cubic-bezier(.2,.8,.3,1);
 }
 @keyframes pop{ from{ opacity:0; transform:translateY(14px) scale(.97);} to{ opacity:1; } }
 .popup__close{
   position:absolute; top:.5rem; right:.9rem; background:none; border:0;
   color:inherit; font-size:1.6rem; cursor:pointer; line-height:1;
+  transition:transform .25s ease;
 }
-.popup h3{ font-family:var(--display); font-weight:700; font-size:1.6rem; text-align:center; margin:0 0 .1rem; line-height:1; }
+.popup__close:hover{ transform:rotate(90deg); }
+.popup h3{ font-family:var(--display); font-weight:700; font-size:1.7rem; text-align:center; margin:0 0 .1rem; line-height:1; }
 .popup .when{ text-align:center; font-size:.95rem; letter-spacing:.1em; margin:0 0 1.5rem; opacity:.92; }
 .popup label{ display:block; font-size:.9rem; letter-spacing:.06em; margin:1.1rem 0 .3rem; }
 .popup input, .popup select, .popup textarea{
@@ -337,34 +358,48 @@ a{ color:inherit; text-decoration:none; }
   border-radius:3px; padding:.5rem .6rem;
 }
 .popup textarea{ min-height:78px; resize:vertical; }
+/* two across where there's room, so the form reads as one card, not a column */
+.popup .pair{ display:grid; grid-template-columns:1fr 1fr; gap:0 1rem; }
+@media (max-width:520px){ .popup .pair{ grid-template-columns:1fr; } }
 .popup button[type=submit]{
   width:100%; margin-top:1.75rem; cursor:pointer;
   font-family:var(--body); font-size:1rem; letter-spacing:.1em;
   padding:.75rem 1rem; color:var(--white); background:var(--blue);
   border:1px solid var(--white); border-radius:3px;
-  transition:filter .25s ease;
+  transition:filter .25s ease, background .25s ease;
 }
-.popup button[type=submit]:hover{ filter:contrast(118%); }
+.popup button[type=submit]:hover{ filter:contrast(118%); background:rgba(255,255,255,.14); }
 .popup__thanks{ display:none; text-align:center; padding:2rem 0; font-style:italic; }
 .popup__thanks.is-shown{ display:block; }
 
-/* ═══════════════════════ EARLY RSVP BAND ═══════════════════════ */
-/* Its own strip before the schedule, matched to the marquee band's height.
-   Nothing in it but the button, which fades up as it comes into view. */
+/* ═══════════════════════ 6. EARLY RSVP STRIP ═══════════════════════ */
+/* Landscape turns the old button-only band into a line and a button. */
 .rsvp-early{
   position:relative; z-index:4;
-  min-height:calc(var(--mq-h) * .72);
-  display:grid; place-items:center;
-  padding:clamp(3rem,7vw,6rem) var(--gutter);
+  padding:clamp(3.5rem,6vw,5.5rem) var(--gutter) clamp(3rem,5vw,4.5rem);
   background:var(--cream);
 }
-.rsvp-early__btn{
-  background:none; border:0; padding:0; cursor:pointer;
-  width:clamp(150px,15vw,220px); color:var(--ink);
+.rsvp-early__inner::after{   /* the rule that closes the band */
+  content:""; position:absolute; left:0; right:0;
+  bottom:calc(clamp(3rem,5vw,4.5rem) * -.5); height:1px;
+  background:rgba(69,26,3,.18);
+}
+.rsvp-early__inner{
+  position:relative;
+  max-width:var(--measure); margin-inline:auto;
+  display:flex; align-items:center; justify-content:center;
+}
+.rsvp-early__slot{
   opacity:0; transform:translateY(18px);
   transition:opacity .7s ease, transform .7s cubic-bezier(.2,.8,.3,1);
 }
-.rsvp-early.is-in .rsvp-early__btn{ opacity:1; transform:none; }
+.rsvp-early.is-in .rsvp-early__slot{ opacity:1; transform:none; }
+.rsvp-early__btn{
+  background:none; border:0; padding:0; cursor:pointer;
+  width:clamp(160px,14vw,230px); color:var(--ink); display:block;
+  transition:transform .35s cubic-bezier(.2,.8,.3,1);
+}
+.rsvp-early__btn.is-pulled{ transition:transform .12s linear; }
 .rsvp-early__btn svg{ width:100%; height:auto; overflow:visible; }
 .rsvp-early__btn .frame{
   fill:none; stroke:currentColor; stroke-width:3;
@@ -376,82 +411,81 @@ a{ color:inherit; text-decoration:none; }
 .rsvp-early__btn:hover .frame{ transform:translate(-1px,2px); }
 .rsvp-early__btn:hover .ticks-mark{ stroke-dashoffset:-4; }
 
-/* ═══════════════════════ CREAM SECTIONS ═══════════════════════ */
+/* ═══════════════════════ 7. CREAM SECTIONS ═══════════════════════ */
 .page{ position:relative; z-index:3; background:var(--cream); }
 .section{
   position:relative;
-  padding:clamp(4rem,10vw,9rem) var(--gutter) clamp(7rem,11vw,9rem);
+  padding:clamp(4rem,8vw,8rem) var(--gutter) clamp(6rem,9vw,9rem);
 }
+.section__inner{ max-width:var(--measure); margin-inline:auto; }
 
 .h-display{
   font-family:var(--display); font-weight:400;
-  font-size:clamp(1.7rem,3.6vw,3rem); line-height:1.15;
-  margin:0 0 2.5rem;
-}
-.h-label{
-  font-weight:600; text-transform:uppercase;
-  font-size:clamp(.85rem,1vw,.95rem); letter-spacing:.22em;
-  margin:2.5rem 0 .7rem;
+  font-size:clamp(1.9rem,3.2vw,3.2rem); line-height:1.1;
+  margin:0 0 1.25rem;
 }
 .block p{ margin:0; }
 
-/* ═══════════════════════ THE BIG DAY — scroll accordion ═══════════════════════ */
+/* ═══════════════════════ 8. SCHEDULE — hover accordion ═══════════════════════ */
 /* Tuning lives here. Everything below reads from these. */
 #info{
-  --panel-height:    clamp(440px, calc(100vh - 235px), 1000px);  /* all the height the pinned stage allows */
-  --panel-open-max: 1180px;   /* ceiling for the open panel         */
-  --panel-closed:     52px;   /* width of a fully closed panel      */
+  --panel-height:   clamp(520px, calc(100vh - 190px), 940px);  /* tall: the panels are the column */
+  --panel-open-max:  880px;   /* ceiling for the open panel         */
+  --panel-closed:     56px;   /* width of a fully closed panel      */
   --panel-radius:     16px;
-  --panel-gap:        12px;
+  --panel-gap:        14px;
   --overlay:          0.40;   /* darkness over a closed panel       */
-  --glide:            0.14;   /* 0.05 = floaty, 0.35 = tight        */
-  --caption-open:     24px;
-  --caption-closed:   96px;
-  --reveal-at:        0.82;   /* openness before the text appears   */
+  --glide:           0.055;   /* 0.05 = floaty, 0.35 = tight        */
+  --caption-open:     28px;
+  --caption-closed:  124px;
+  --reveal-at:        0.78;   /* openness before the text appears   */
   --hairline:         rgba(255,255,255,.24);
   --body-ink:         rgba(255,255,255,.94);
 }
 
 .scroll-wrap{ position:relative; }
-.stage{
-  position:relative;
-  display:flex; align-items:center; overflow:hidden;
-}
+.stage{ position:relative; display:flex; align-items:center; overflow:hidden; }
+/* the landscape split: a standing index rail on the left, panels on the right.
+   Taking the title out of the panels' way is what lets them run tall. */
 .stage__inner{
-  width:100%; max-width:1280px; margin:0 auto;
-  padding:24px var(--gutter) 88px;
-  display:flex; flex-direction:column;
-  align-items:center; justify-content:center; gap:32px;
+  width:100%; max-width:var(--measure); margin:0 auto;
+  padding:clamp(2rem,4vw,3.5rem) var(--gutter) clamp(4rem,7vw,6rem);
+  display:grid; grid-template-columns:minmax(210px,19%) minmax(0,1fr);
+  align-items:center; gap:clamp(2rem,4vw,4.5rem);
 }
+.stage__text{
+  display:flex; flex-direction:column; align-items:flex-start;
+  gap:clamp(1.25rem,2vw,2rem);
+}
+.stage__aside{ width:100%; display:flex; flex-direction:column; align-items:flex-start; gap:1rem; }
 .headline{
   margin:0; font-family:var(--display); font-weight:700;
-  font-size:clamp(1.8rem,4vw,3.1rem); line-height:1.1;
-  color:var(--ink); text-align:center;
+  font-size:clamp(1.9rem,3.4vw,3.2rem); line-height:1.05;
+  color:var(--ink);
 }
-.stage__text{ width:100%; }
 .stage__media{ width:100%; }
 
-.ticks{ display:flex; gap:8px; margin-top:20px; justify-content:center; }
-.swipe-hint{
-  margin:.85rem 0 0; text-align:center;
-  font-family:var(--body); font-style:italic;
-  font-size:clamp(.9rem,1.15vw,1.05rem); color:rgba(69,26,3,.55);
-}
+.ticks{ display:flex; flex-direction:column; gap:2px; width:100%; }
 .tick{
-  --w:0; width:28px; height:8px; padding:0; border:0; background:none;
-  cursor:pointer; flex:none;
+  --w:0; display:flex; align-items:center; gap:.8rem; width:100%;
+  padding:.5rem 0; border:0; background:none; cursor:pointer;
+  font-family:var(--body); color:var(--ink); text-align:left;
+  font-size:clamp(.95rem,1.05vw,1.1rem); line-height:1.2;
 }
-.tick::after{
-  content:""; display:block; width:100%; height:2px; margin-top:3px;
-  background:var(--ink); opacity:calc(.2 + .8 * var(--w));
+/* the rule grows as its panel opens — the rail reads as a progress index */
+.tick__bar{
+  flex:none; height:2px; background:currentColor;
+  width:calc(16px + 30px * var(--w));
+  opacity:calc(.25 + .75 * var(--w));
+  transition:width .18s linear;
 }
+.tick__label{ opacity:calc(.5 + .5 * var(--w)); white-space:nowrap; }
 
-/* widths are driven frame-by-frame from scroll, so no CSS transition here */
+/* widths are driven frame-by-frame from the pointer, so no CSS transition here */
 .accordion{
-  display:flex; flex-direction:row; align-items:center; justify-content:center;
+  display:flex; flex-direction:row; align-items:center;
   gap:var(--panel-gap); overflow:hidden;
   touch-action:pan-y;          /* vertical scroll still belongs to the page */
-  cursor:grab;
 }
 .accordion.is-dragging{ cursor:grabbing; }
 .panel{
@@ -466,7 +500,7 @@ a{ color:inherit; text-decoration:none; }
 .panel__img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
 .panel__scrim{ position:absolute; inset:0; background:#000; opacity:var(--overlay); }
 .panel.is-photo .panel__scrim{
-  opacity:calc(var(--overlay) - (var(--overlay) - .12) * var(--w));
+  opacity:calc(var(--overlay) - (var(--overlay) - .10) * var(--w));
 }
 .panel__gradient{
   position:absolute; inset:0; opacity:var(--w);
@@ -476,34 +510,45 @@ a{ color:inherit; text-decoration:none; }
 .panel__caption{
   position:absolute; left:50%;
   bottom:calc(var(--caption-closed) - (var(--caption-closed) - var(--caption-open)) * var(--w));
-  color:var(--cream); font-size:1.05rem; font-weight:600;
-  letter-spacing:.02em; white-space:nowrap;
+  color:var(--cream); font-size:1.1rem; font-weight:600;
+  letter-spacing:.03em; white-space:nowrap;
   transform:translateX(-50%) rotate(calc(90deg * (1 - var(--w))));
   transform-origin:center;
 }
 .panel.has-content .panel__caption{ opacity:clamp(0, calc((.62 - var(--w)) * 4), 1); }
 
+/* a pinned panel keeps a hairline marker so it's clear why it stays open */
+.panel__pin{
+  position:absolute; top:18px; right:20px; z-index:3;
+  display:flex; align-items:center; gap:.4rem;
+  font-size:.72rem; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--cream); opacity:0; transition:opacity .3s ease;
+  pointer-events:none;
+}
+.panel.is-pinned .panel__pin{ opacity:calc(var(--w) * .8); }
+.panel__pin::before{ content:""; width:6px; height:6px; border-radius:50%; background:currentColor; }
+
 .panel__content{
   position:absolute; left:0; bottom:0;
   width:var(--open-px,400px);              /* laid out at final width, so text never reflows */
-  padding:30px 34px 34px; text-align:left; pointer-events:none;
+  padding:clamp(26px,2.6vw,40px) clamp(26px,2.8vw,44px);
+  text-align:left; pointer-events:none;
   opacity:clamp(0, calc((var(--w) - var(--reveal-at)) / (1 - var(--reveal-at))), 1);
   transform:translateY(calc((1 - var(--w)) * 220px));
 }
-.panel__date{
-  margin:0; font-size:.75rem; font-weight:600;
-  letter-spacing:.18em; text-transform:uppercase; color:var(--cream);
-}
+/* text keeps a readable measure even when the panel is very wide —
+   the rest of the photo stays visible to its right */
+.panel__inner{ max-width:min(680px, 100%); }
 .panel__heading{
-  margin:0 0 18px; font-family:var(--display); font-weight:700;
-  font-size:clamp(1.4rem,2vw,1.95rem); line-height:1.1; color:#fff;
+  margin:0 0 20px; font-family:var(--display); font-weight:700;
+  font-size:clamp(1.5rem,2.2vw,2.2rem); line-height:1.1; color:#fff;
 }
 .row{
-  display:grid; grid-template-columns:132px 1fr; gap:16px;
-  align-items:baseline; padding:12px 0; border-top:1px solid var(--hairline);
+  display:grid; grid-template-columns:150px 1fr; gap:18px;
+  align-items:baseline; padding:13px 0; border-top:1px solid var(--hairline);
 }
-.row__q{ font-size:.85rem; font-weight:600; letter-spacing:.03em; color:var(--cream); }
-.row__a{ font-size:1rem; line-height:1.5; color:var(--body-ink); max-width:46ch; }
+.row__q{ font-size:.86rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--cream); }
+.row__a{ font-size:1.02rem; line-height:1.5; color:var(--body-ink); max-width:48ch; }
 .row__link{
   color:#fff; pointer-events:auto;
   text-decoration:underline; text-decoration-color:rgba(255,255,255,.5);
@@ -511,50 +556,71 @@ a{ color:inherit; text-decoration:none; }
 }
 .row__link:hover{ text-decoration-color:#fff; }
 
-@media (min-width:768px){
-  /* one column at every width: title on top, panels beneath and full-bleed */
-  .stage__inner{ gap:26px; padding:30px var(--gutter) 84px; }
+/* between desktop and phone: drop the rail, keep the ticks as a row */
+@media (max-width:1100px){
+  #info{ --panel-height:clamp(440px, calc(100vh - 250px), 820px); }
+  .stage__inner{ grid-template-columns:1fr; gap:clamp(1.25rem,2.5vw,2rem); }
+  .stage__text{
+    flex-direction:row; align-items:flex-end;
+    justify-content:space-between; flex-wrap:wrap; gap:1.5rem;
+  }
+  .stage__aside{ width:auto; align-items:flex-end; gap:.55rem; }
+  .ticks{ flex-direction:row; align-items:center; gap:10px; width:auto; }
+  .tick{ padding:0; gap:0; }
+  .tick__label{ display:none; }
+  .tick__bar{ width:calc(26px + 12px * var(--w)); }
 }
+
+/* small screens keep the swipe build */
 @media (max-width:767px){
   #info{
-    /* thinner closed panels + no side gutter = a much wider open panel.
-       The top padding is what keeps the panels clear of the side nav,
-       since this section drops the gutter the others keep. */
-    --panel-height:clamp(400px, calc(100vh - 175px), 800px); --panel-closed:22px;
+    --panel-height:clamp(400px, calc(100vh - 200px), 800px); --panel-closed:22px;
     --panel-gap:5px; --caption-closed:74px; --caption-open:18px;
   }
-  .stage__inner{ padding:22px 12px 84px; gap:18px; }
-  .panel__caption{ font-size:.78rem; }
-  .headline{ font-size:clamp(1.6rem,6vw,2.1rem); }
-  .ticks{ margin-top:14px; }
+  .accordion{ cursor:grab; }
+  .stage__inner{ padding:5.5rem 12px 4rem; gap:16px; }
+  .stage__text{ flex-direction:column; align-items:center; text-align:center; gap:.6rem; }
+  .stage__aside{ align-items:center; }
+  .panel__caption{ font-size:.8rem; }
   .panel__content{ padding:18px 18px 20px; }
-  .panel__date{ font-size:.68rem; letter-spacing:.14em; }
   .panel__heading{ margin:0 0 14px; font-size:1.3rem; }
   .row{ grid-template-columns:1fr; gap:2px; padding:9px 0; }
-  .row__q{ font-size:.78rem; }
-  .row__a{ font-size:.92rem; line-height:1.45; }
+  .row__q{ font-size:.76rem; }
+  .row__a{ font-size:.94rem; line-height:1.45; }
+  .panel__pin{ display:none; }
 }
 
-/* ═══════════════════════ REGISTRY / HEARTS ═══════════════════════ */
-#games{ padding-bottom:clamp(8rem,13vw,11rem); }
-.registry{ position:relative; overflow:hidden; text-align:center; }
-.registry__copy{ max-width:46ch; margin-inline:auto; }
-/* title and subtitle pulled close together and tracked tight */
-.registry__copy h2{
-  margin:0 0 .4rem; line-height:1.02; letter-spacing:-.025em;
+/* ═══════════════════════ 9. RSVP PHOTO BAND ═══════════════════════ */
+.rsvp-band{
+  position:relative; color:var(--white);
+  background:var(--img-tree) center 82%/cover no-repeat;
+  min-height:100vh;
 }
-.registry__copy p{ margin:0; letter-spacing:-.01em; line-height:1.45; }
+.rsvp-band::after{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,0,0,.22),rgba(0,0,0,.04) 40%,rgba(0,0,0,.16));
+}
 
-/* ── games dock — icons float free, no container, so each pulse has room ── */
+/* ═══════════════════════ 10. GAMES ═══════════════════════ */
+#games{ padding-bottom:clamp(7rem,10vw,10rem); }
+.registry{ position:relative; overflow:hidden; }
+.registry__grid{
+  max-width:var(--measure); margin-inline:auto;
+  display:grid; gap:clamp(2.5rem,5vw,5rem); align-items:center;
+}
+.registry__copy p{ margin:0; letter-spacing:-.01em; line-height:1.5; max-width:46ch; }
+.registry__copy h2{ letter-spacing:-.025em; }
+
+/* ── games dock — icons float free, so each magnification has room ── */
 .dock{
-  display:flex; align-items:center; justify-content:center;
-  gap:clamp(1.6rem,6vw,4rem);
+  display:flex; align-items:center;
+  gap:clamp(1.5rem,3vw,3rem);
   width:max-content; max-width:100%;
-  margin:clamp(2.5rem,5vw,3.5rem) auto 0;
+  margin:clamp(2.5rem,4vw,3.5rem) 0 0;
 }
 .dock__item{
   display:grid; place-items:center; flex:none;
-  width:clamp(50px,6.6vw,66px); aspect-ratio:1;
+  width:clamp(54px,4.6vw,72px); aspect-ratio:1;
   border-radius:50%; overflow:hidden;
   filter:drop-shadow(0 6px 16px rgba(69,26,3,.18));
   transform-origin:bottom center;
@@ -563,29 +629,43 @@ a{ color:inherit; text-decoration:none; }
 .dock__item svg{ width:100%; height:100%; display:block; }
 .dock__item:focus-visible{ outline:2.5px solid var(--ink); outline-offset:4px; }
 @media (hover:none){ .dock__item{ transform:none; } }
+
 .figure{
-  position:relative; width:min(430px,80vw); margin:clamp(3rem,6vw,4.5rem) auto 0;
+  position:relative; width:min(430px,100%); margin:0 0 0 auto;
   padding:14px 0 14px 14px;
 }
 .figure__frame{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
 .figure__frame path{ fill:none; stroke:var(--ink); stroke-width:5; stroke-linecap:round; stroke-linejoin:round; }
 .figure__photo{ width:100%; aspect-ratio:2/3; background:var(--img-bigtree) center/cover no-repeat; }
 
+/* landscape: words and games on the left, the photo holding the right */
+@media (min-width:900px){
+  .registry__grid{ grid-template-columns:1.1fr .9fr; }
+}
+@media (max-width:899px){
+  .registry{ text-align:center; }
+  .registry__copy p{ margin-inline:auto; }
+  .dock{ margin-inline:auto; justify-content:center; }
+  .figure{ margin:clamp(3rem,6vw,4rem) auto 0; width:min(430px,80vw); }
+}
+@media (min-width:1200px){
+  .figure{ width:min(490px,100%); }
+}
 
-
-/* ═══════════════════════ REVEAL ═══════════════════════ */
-.fade{ opacity:0; transition:opacity .9s ease; }
-.fade.is-in{ opacity:1; }
+/* ═══════════════════════ 11. REVEAL ═══════════════════════ */
+.fade{ opacity:0; transform:translateY(20px); transition:opacity .9s ease, transform .9s cubic-bezier(.2,.8,.3,1); }
+.fade.is-in{ opacity:1; transform:none; }
 
 @media (prefers-reduced-motion:reduce){
   html{ scroll-behavior:auto; }
   *,*::before,*::after{ animation:none !important; transition-duration:.01ms !important; }
-  .fade{ opacity:1; }
+  .fade{ opacity:1; transform:none; }
 }
 </style>
 </head>
 <body>
 
+<!-- ═══════════ NAV ═══════════ -->
 <nav class="sidenav" id="sidenav">
   <ol>
     <li><a href="#home" data-target="home"><span class="star"></span>home</a></li>
@@ -596,17 +676,19 @@ a{ color:inherit; text-decoration:none; }
 </nav>
 
 <!-- ═══════════ HERO ═══════════ -->
-<header class="band hero" id="home">
+<header class="hero" id="home">
+  <div class="hero__bg" aria-hidden="true"></div>
 
   <div class="hero__inner">
-    <p class="hero__date">16.01.27</p>
     <h1 class="hero__names">Mark&nbsp;&amp;&nbsp;Bernadette</h1>
+    <p class="hero__dates">
+      <span class="d">16.01.27</span>
+    </p>
     <p class="hero__sub">we're getting married!</p>
   </div>
-
 </header>
 
-<!-- ═══════════ SECTION 1.5 — PHOTO MARQUEE ═══════════ -->
+<!-- ═══════════ PHOTO MARQUEE ═══════════ -->
 <!-- photos live in the PHOTOS list at the foot of this file -->
 <section class="marquee-band" aria-label="Photos of us">
   <div class="hero__marquee">
@@ -620,7 +702,7 @@ a{ color:inherit; text-decoration:none; }
     </div>
   </div>
 
-  <p class="mq-hint">tap a photo!</p>
+  <p class="mq-hint" id="mqHint">tap a photo!</p>
 
   <div class="mq-expand" id="mqExpand" role="button" tabindex="0" aria-label="Close photo">
     <img alt="">
@@ -629,19 +711,23 @@ a{ color:inherit; text-decoration:none; }
 
 <!-- ═══════════ EARLY RSVP ═══════════ -->
 <section class="rsvp-early" id="rsvp-early">
-  <button class="rsvp-early__btn" id="rsvpEarlyBtn" aria-haspopup="dialog">
-    <svg viewBox="0 0 176 112">
-      <path class="frame" d="M14 12c40-4 92-6 148-3 4 34 5 62 2 90-46 5-96 5-148 1-4-30-4-58-2-88z"/>
-      <path class="frame" d="M8 22c40-5 96-7 152-4 3 34 4 60 1 88-46 5-98 5-150 1-4-30-5-56-3-85z"/>
-      <path class="frame ticks-mark" d="M16 20 6 34"/>
-      <path class="frame ticks-mark" d="M14 92 6 104"/>
-      <path class="frame ticks-mark" d="M166 88c-3 8-8 15-14 20"/>
-      <text class="word" x="88" y="76" text-anchor="middle">RSVP</text>
-    </svg>
-  </button>
+  <div class="rsvp-early__inner">
+    <div class="rsvp-early__slot">
+      <button class="rsvp-early__btn" id="rsvpEarlyBtn" aria-haspopup="dialog">
+        <svg viewBox="0 0 176 112">
+          <path class="frame" d="M14 12c40-4 92-6 148-3 4 34 5 62 2 90-46 5-96 5-148 1-4-30-4-58-2-88z"/>
+          <path class="frame" d="M8 22c40-5 96-7 152-4 3 34 4 60 1 88-46 5-98 5-150 1-4-30-5-56-3-85z"/>
+          <path class="frame ticks-mark" d="M16 20 6 34"/>
+          <path class="frame ticks-mark" d="M14 92 6 104"/>
+          <path class="frame ticks-mark" d="M166 88c-3 8-8 15-14 20"/>
+          <text class="word" x="88" y="76" text-anchor="middle">RSVP</text>
+        </svg>
+      </button>
+    </div>
+  </div>
 </section>
 
-<!-- ═══════════ SCHEDULE ═══════════ -->
+<!-- ═══════════ THE BIG DAY ═══════════ -->
 <div class="page">
   <div class="scroll-wrap" id="info">
     <div class="stage">
@@ -649,8 +735,9 @@ a{ color:inherit; text-decoration:none; }
 
         <div class="stage__text">
           <h2 class="headline">Schedule</h2>
-          <div class="ticks" id="ticks"></div>
-          <p class="swipe-hint">swipe to explore</p>
+          <div class="stage__aside">
+            <div class="ticks" id="ticks"></div>
+          </div>
         </div>
 
         <div class="stage__media">
@@ -663,7 +750,7 @@ a{ color:inherit; text-decoration:none; }
 </div>
 
 <!-- ═══════════ RSVP BAND ═══════════ -->
-<section class="band rsvp-band" id="rsvp-band" aria-label="rsvp"></section>
+<section class="rsvp-band" id="rsvp-band" aria-label="rsvp"></section>
 
 <button class="rsvp-btn" id="rsvpBtn" aria-haspopup="dialog">
   <svg viewBox="0 0 176 112">
@@ -692,15 +779,20 @@ a{ color:inherit; text-decoration:none; }
       <label for="femail">Email</label>
       <input id="femail" name="email" type="email" required autocomplete="email">
 
-      <label for="fattend">Will you be there?</label>
-      <select id="fattend" name="attending" required>
-        <option value="">Choose one</option>
-        <option>Joyfully accepts</option>
-        <option>Regretfully declines</option>
-      </select>
-
-      <label for="fguests">Number in your party</label>
-      <select id="fguests" name="guests"><option>1</option><option>2</option><option>3</option><option>4</option></select>
+      <div class="pair">
+        <div>
+          <label for="fattend">Will you be there?</label>
+          <select id="fattend" name="attending" required>
+            <option value="">Choose one</option>
+            <option>Joyfully accepts</option>
+            <option>Regretfully declines</option>
+          </select>
+        </div>
+        <div>
+          <label for="fguests">Number in your party</label>
+          <select id="fguests" name="guests"><option>1</option><option>2</option><option>3</option><option>4</option></select>
+        </div>
+      </div>
 
       <label for="fnote">Dietary needs, or a song request</label>
       <textarea id="fnote" name="note"></textarea>
@@ -714,92 +806,128 @@ a{ color:inherit; text-decoration:none; }
 <!-- ═══════════ GAMES ═══════════ -->
 <div class="page">
   <section class="section registry" id="games">
-    <div class="registry__copy fade">
-      <h2 class="h-display">A little something while you wait</h2>
-      <p>If there's one thing about us, we love a good game. Get to know us better and see where you land on the leaderboard!</p>
+    <div class="registry__grid">
+
+      <div class="registry__left">
+        <div class="registry__copy fade">
+          <h2 class="h-display">A little something while you wait</h2>
+          <p>If there's one thing about us, we love a good game. Get to know us better and see where you land on the leaderboard!</p>
+        </div>
+
+        <!-- EDIT: the first three point at the games themselves; the arrow is yours to set -->
+        <nav class="dock fade" aria-label="Games">
+
+          <a class="dock__item games-link" href="/games/" aria-label="The Mini crossword">
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <circle cx="32" cy="32" r="32" fill="#6E93D6"/>
+              <g fill="none" stroke="#fff" stroke-width="3">
+                <rect x="16" y="16" width="32" height="32" rx="2"/>
+                <path d="M26.7 16v32M37.3 16v32M16 26.7h32M16 37.3h32"/>
+              </g>
+              <rect x="16" y="16" width="10.7" height="10.7" fill="#fff" opacity=".92"/>
+            </svg>
+          </a>
+
+          <a class="dock__item games-link" href="/games/" aria-label="Connections">
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <circle cx="32" cy="32" r="32" fill="#fff"/>
+              <g>
+                <rect x="14" y="14" width="16" height="16" rx="3" fill="#F9DF6D"/>
+                <rect x="34" y="14" width="16" height="16" rx="3" fill="#A0C35A"/>
+                <rect x="14" y="34" width="16" height="16" rx="3" fill="#B0C4EF"/>
+                <rect x="34" y="34" width="16" height="16" rx="3" fill="#BA81C5"/>
+              </g>
+            </svg>
+          </a>
+
+          <a class="dock__item games-link" href="/games/" aria-label="Strands">
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <circle cx="32" cy="32" r="32" fill="#AEDFDF"/>
+              <path d="M20 42c0-8 6-10 12-10s12-2 12-10"
+                    fill="none" stroke="#1D6B6B" stroke-width="3.5" stroke-linecap="round"/>
+              <g fill="#1D6B6B">
+                <circle cx="20" cy="42" r="4.5"/>
+                <circle cx="32" cy="32" r="4.5"/>
+                <circle cx="44" cy="22" r="4.5"/>
+              </g>
+            </svg>
+          </a>
+
+          <a class="dock__item games-link" href="/games/" id="games-link" aria-label="More games">
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <circle cx="32" cy="32" r="32" fill="#451A03"/>
+              <path d="M23 32h18M34 24l8 8-8 8" fill="none" stroke="#FAE7C6"
+                    stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+          <script>
+          // EDIT: remembers this invite (day + mobile/web) so the games page's
+          // back button can return here. Reused by /games/index.html via the
+          // same "bm-games:origin" localStorage key.
+          (function(){
+            document.querySelectorAll('.games-link').forEach(function(link){
+              link.addEventListener('click', function(){
+                try { localStorage.setItem('bm-games:origin', JSON.stringify({ day: 'thecelebration', variant: 'web' })); }
+                catch (e) {}
+              });
+            });
+          })();
+          </script>
+
+        </nav>
+      </div>
+
+      <div class="figure fade">
+        <svg class="figure__frame" viewBox="0 0 400 520" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M9 14C6 140 12 300 5 508c118 7 260 2 388 6C398 380 392 190 397 8 276 3 132 12 9 14z"/>
+        </svg>
+        <div class="figure__photo" role="img" aria-label="The two of us in the gardens"></div>
+      </div>
+
     </div>
-
-    <!-- EDIT: the first three point at the games themselves; the arrow is yours to set -->
-    <nav class="dock fade" aria-label="Games">
-
-      <a class="dock__item games-link" href="/games/" aria-label="The Mini crossword">
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <circle cx="32" cy="32" r="32" fill="#6E93D6"/>
-          <g fill="none" stroke="#fff" stroke-width="3">
-            <rect x="16" y="16" width="32" height="32" rx="2"/>
-            <path d="M26.7 16v32M37.3 16v32M16 26.7h32M16 37.3h32"/>
-          </g>
-          <rect x="16" y="16" width="10.7" height="10.7" fill="#fff" opacity=".92"/>
-        </svg>
-      </a>
-
-      <a class="dock__item games-link" href="/games/" aria-label="Connections">
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <circle cx="32" cy="32" r="32" fill="#fff"/>
-          <g>
-            <rect x="14" y="14" width="16" height="16" rx="3" fill="#F9DF6D"/>
-            <rect x="34" y="14" width="16" height="16" rx="3" fill="#A0C35A"/>
-            <rect x="14" y="34" width="16" height="16" rx="3" fill="#B0C4EF"/>
-            <rect x="34" y="34" width="16" height="16" rx="3" fill="#BA81C5"/>
-          </g>
-        </svg>
-      </a>
-
-      <a class="dock__item games-link" href="/games/" aria-label="Strands">
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <circle cx="32" cy="32" r="32" fill="#AEDFDF"/>
-          <path d="M20 42c0-8 6-10 12-10s12-2 12-10"
-                fill="none" stroke="#1D6B6B" stroke-width="3.5" stroke-linecap="round"/>
-          <g fill="#1D6B6B">
-            <circle cx="20" cy="42" r="4.5"/>
-            <circle cx="32" cy="32" r="4.5"/>
-            <circle cx="44" cy="22" r="4.5"/>
-          </g>
-        </svg>
-      </a>
-
-      <a class="dock__item games-link" href="/games/" id="games-link" aria-label="More games">
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <circle cx="32" cy="32" r="32" fill="#451A03"/>
-          <path d="M23 32h18M34 24l8 8-8 8" fill="none" stroke="#FAE7C6"
-                stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </a>
-
-    </nav>
-    <script>
-    // EDIT: remembers this invite (day + mobile/web) so the games page's back
-    // button can return here. Reused by /games/index.html via the same
-    // "bm-games:origin" localStorage key.
-    (function(){
-      document.querySelectorAll('.games-link').forEach(function(link){
-        link.addEventListener('click', function(){
-          try { localStorage.setItem('bm-games:origin', JSON.stringify({ day: 'saturday', variant: 'mobile' })); }
-          catch (e) {}
-        });
-      });
-    })();
-    </script>
-
-    <div class="figure fade">
-      <svg class="figure__frame" viewBox="0 0 400 520" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M9 14C6 140 12 300 5 508c118 7 260 2 388 6C398 380 392 190 397 8 276 3 132 12 9 14z"/>
-      </svg>
-      <div class="figure__photo" role="img" aria-label="The two of us in the gardens"></div>
-    </div>
-
   </section>
 </div>
 
+<!-- ═══════════════════════ SCRIPT 1 — PAGE CHROME ═══════════════════════ -->
 <script>
 (function(){
   // EDIT: RSVP_URL — where both RSVP buttons send guests.
   var RSVP_URL = 'https://withjoy.com/bernadette-and-mark?utm_medium=web&utm_source=joy&utm_campaign=website_overview_copy';
 
-  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var reduce   = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var canHover = matchMedia('(hover: hover) and (pointer: fine)').matches;
 
-  var STAR = '<svg viewBox="0 0 12 11"><path d="M6.8 2.7c0-.3.1-.6.1-1 .1-.5.1-1 0-1.4 0-.3-.4-.4-.6-.2-.2.2-.4.5-.6.8-.8 1.2-1.6 1.6-2.9 1.2-.3-.1-.6-.1-.9-.1-.3 0-.7.2-.8.5-.1.2 0 .4.1.5.4.4 1.1.7 1.7.8.5.1 1.3.3 1.3.8 0 .5-.9 1-1.4 1.3-.9.5-1.7 1.1-2.5 1.6-.3.3-.2.9.2.9.4 0 .8 0 1.2-.2.5-.2.9-.4 1.4-.7 1.1-.7 1.6-.6 1.6.7 0 .4 0 .8.1 1.2.2.5.5.8 1.1.8.5 0 1.1-.2 1.4-.7.1-.2.2-.4-.1-.6-.2-.1-.4-.2-.5-.3-.5-.4-.5-1.7.1-2.3.5-.5.9.1 1.3.3.4.2.8.4 1.2.7.2.1.4.2.6.3.5.3 1 .2 1.3-.2.3-.4.1-.9-.4-1.2-.4-.3-.8-.5-1.2-.7-.3-.2-.5-.4-.7-.7-.1-.2 0-.6.2-.7.6-.5 1.3-.9 1.9-1.4.4-.3.7-.5 1-.8.1-.2.1-.5 0-.7-.2-.5-.9-.3-1.3-.1-.7.4-1.5.9-2.3 1.3-.3.2-.6.3-.9.4-.4.1-.5-.2-.5-.4z"/></svg>';
+  var STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0c.6 6.3 5.1 10.8 12 12-6.9 1.2-11.4 5.7-12 12-.6-6.3-5.1-10.8-12-12C6.9 10.8 11.4 6.3 12 0z"/></svg>';
   document.querySelectorAll('.sidenav .star').forEach(function(s){ s.innerHTML = STAR; });
+
+  /* ── hero: the backdrop drifts against the cursor ── */
+  var hero = document.getElementById('home');
+  if(hero && canHover && !reduce){
+    hero.addEventListener('pointermove', function(e){
+      hero.style.setProperty('--px', (e.clientX / innerWidth  - .5).toFixed(3));
+      hero.style.setProperty('--py', (e.clientY / innerHeight - .5).toFixed(3));
+    });
+    hero.addEventListener('pointerleave', function(){
+      hero.style.setProperty('--px', 0);
+      hero.style.setProperty('--py', 0);
+    });
+  }
+
+  /* ── magnetic buttons: they lean toward the pointer, then spring back ── */
+  function magnetise(el, strength){
+    if(!el || !canHover || reduce) return;
+    el.addEventListener('pointermove', function(e){
+      var r = el.getBoundingClientRect();
+      el.classList.add('is-pulled');
+      el.style.transform =
+        'translate(' + ((e.clientX - r.left - r.width  / 2) * strength).toFixed(1) + 'px,' +
+                       ((e.clientY - r.top  - r.height / 2) * strength).toFixed(1) + 'px)';
+    });
+    el.addEventListener('pointerleave', function(){
+      el.classList.remove('is-pulled');
+      el.style.transform = '';
+    });
+  }
 
   /* rsvp button shows only while its band spans the middle of the viewport */
   var zone = document.getElementById('rsvp-band');
@@ -826,10 +954,14 @@ a{ color:inherit; text-decoration:none; }
   addEventListener('scroll', onScroll, {passive:true});
   addEventListener('resize', onScroll);
 
+  /* ── rsvp buttons: open the shared RSVP link in a new tab ── */
   var popup = document.getElementById('popup');
-  btn.addEventListener('click', function(){
+  function goToRsvp(){
     window.open(RSVP_URL, '_blank', 'noopener');
-  });
+  }
+  btn.addEventListener('click', goToRsvp);
+  magnetise(btn, 0.28);
+
   popup.addEventListener('click', function(e){
     if(e.target.hasAttribute('data-close')) popup.classList.remove('is-open');
   });
@@ -837,13 +969,12 @@ a{ color:inherit; text-decoration:none; }
     if(e.key === 'Escape') popup.classList.remove('is-open');
   });
 
-  /* the early RSVP button: reveal on scroll, same popup */
+  /* the early RSVP strip: reveal on scroll, same destination */
   var earlyBand = document.getElementById('rsvp-early');
   var earlyBtn  = document.getElementById('rsvpEarlyBtn');
   if(earlyBand && earlyBtn){
-    earlyBtn.addEventListener('click', function(){
-      window.open(RSVP_URL, '_blank', 'noopener');
-    });
+    earlyBtn.addEventListener('click', goToRsvp);
+    magnetise(earlyBtn, 0.22);
     if('IntersectionObserver' in window){
       new IntersectionObserver(function(entries){
         entries.forEach(function(en){ earlyBand.classList.toggle('is-in', en.isIntersecting); });
@@ -879,12 +1010,15 @@ a{ color:inherit; text-decoration:none; }
 })();
 </script>
 
+<!-- ═══════════════════════ SCRIPT 2 — SCHEDULE ACCORDION ═══════════════════════ -->
 <script>
-/* ═══════════ THE BIG DAY — scroll-driven accordion ═══════════
-   Panels are built from the list below. Leave `title` empty for a
-   photo-only panel. Tuning (heights, scroll length, glide) lives in
-   the #info CSS block.
-   ══════════════════════════════════════════════════════════════ */
+/* Panels are built from the list below. Leave `title` empty for a photo-only
+   panel. Tuning (heights, widths, glide) lives in the #info CSS block.
+
+   Desktop: the panel under the cursor opens; moving away returns to the
+   resting panel; a click pins one open so you can read it hands-free.
+   Touch: drag sideways, exactly as on the mobile build.
+   ══════════════════════════════════════════════════════════════════════ */
 (function(){
   /* pull the shared photo vars out of CSS, so paths live in exactly one place */
   function cssImg(name){
@@ -893,13 +1027,14 @@ a{ color:inherit; text-decoration:none; }
   }
   const IMG = {
     bouquet: cssImg('--img-bouquet'),
-    tree:   cssImg('--img-tree'),
-    lawn:   cssImg('--img-lawn'),
-    sat:    cssImg('--img-sat'),
+    tree:    cssImg('--img-tree'),
+    lawn:    cssImg('--img-lawn'),
+    sat:     cssImg('--img-sat'),
     sip:     cssImg('--img-sip'),
     bigtree: cssImg('--img-bigtree')
   };
 
+  /* one day, framed: a photo either side of the panel that carries the detail */
   const items = [
     { title: '', image: IMG.bouquet },
     {
@@ -924,6 +1059,9 @@ a{ color:inherit; text-decoration:none; }
 
   const N    = items.length;
   const LAST = Math.max(N - 1, 1);
+  wrap.style.setProperty('--panel-count', N);
+
+  const ticks = [];
 
   items.forEach(function(item, i){
     const panel = document.createElement('button');
@@ -946,13 +1084,20 @@ a{ color:inherit; text-decoration:none; }
       const grad = document.createElement('div');
       grad.className = 'panel__gradient';
 
+      const pin = document.createElement('span');
+      pin.className = 'panel__pin';
+      pin.textContent = 'pinned';
+
       const content = document.createElement('div');
       content.className = 'panel__content';
+      const inner = document.createElement('div');
+      inner.className = 'panel__inner';
+      content.append(inner);
 
       const heading = document.createElement('h3');
       heading.className = 'panel__heading';
       heading.textContent = item.heading || '';
-      content.append(heading);
+      inner.append(heading);
 
       /* a value may hold newlines — render each on its own line */
       function setLines(target, text){
@@ -982,10 +1127,10 @@ a{ color:inherit; text-decoration:none; }
           setLines(a, pair[1]);
         }
         row.append(q, a);
-        content.append(row);
+        inner.append(row);
       });
 
-      panel.append(grad, content);
+      panel.append(grad, content, pin);
     }
 
     if(item.title){
@@ -996,19 +1141,34 @@ a{ color:inherit; text-decoration:none; }
     }
 
     root.append(panel);
-    ticksEl.append(Object.assign(document.createElement('span'), { className:'tick' }));
+
+    /* photo-only panels get no entry — the rail is the schedule, not an index
+       of every frame. `ticks` stays the same length as `panels` (null in the
+       gaps) so every lookup below can keep using the panel's own index. */
+    if(!item.title){ ticks.push(null); return; }
+
+    const tick = document.createElement('button');
+    tick.type = 'button';
+    tick.className = 'tick';
+    const bar = document.createElement('span');
+    bar.className = 'tick__bar';
+    const label = document.createElement('span');
+    label.className = 'tick__label';
+    label.textContent = item.title;
+    tick.append(bar, label);
+    ticksEl.append(tick);
+    ticks.push(tick);
   });
 
   const panels = [].slice.call(root.children);
-  const ticks  = [].slice.call(ticksEl.children);
 
   /* sizes read back off the section, so the media queries still rule */
-  var OPEN = 400, CLOSED = 52, GLIDE = 0.14;
+  var OPEN = 400, CLOSED = 64, GLIDE = 0.16;
   function readSizes(){
     const cs  = getComputedStyle(wrap);
-    CLOSED    = parseFloat(cs.getPropertyValue('--panel-closed')) || 52;
-    GLIDE     = parseFloat(cs.getPropertyValue('--glide')) || 0.14;
-    const cap = parseFloat(cs.getPropertyValue('--panel-open-max')) || 760;
+    CLOSED    = parseFloat(cs.getPropertyValue('--panel-closed')) || 64;
+    GLIDE     = parseFloat(cs.getPropertyValue('--glide')) || 0.16;
+    const cap = parseFloat(cs.getPropertyValue('--panel-open-max')) || 1180;
     const gap = parseFloat(getComputedStyle(root).columnGap) || 0;
 
     /* the open panel takes every pixel the closed ones don't need */
@@ -1018,7 +1178,8 @@ a{ color:inherit; text-decoration:none; }
   }
   readSizes();
 
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduce   = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const canHover = matchMedia('(hover: hover) and (pointer: fine)').matches;
 
   /* ease the handoff between neighbours so the row's width stays constant */
   const ease = function(t){ return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2; };
@@ -1032,12 +1193,15 @@ a{ color:inherit; text-decoration:none; }
       if(i === base + 1) w = t;
       panels[i].style.width = (CLOSED + w * (OPEN - CLOSED)).toFixed(2) + 'px';
       panels[i].style.setProperty('--w', w.toFixed(4));
-      ticks[i].style.setProperty('--w', w.toFixed(4));
+      if(ticks[i]) ticks[i].style.setProperty('--w', w.toFixed(4));
     }
   }
 
-  /* position is driven by the person now, not by the page scrolling past */
-  var current = 0, target = 0, running = false;
+  /* the day panel, wherever it sits in the list — it opens on load and the
+     accordion falls back to it when the pointer leaves */
+  const HOME = Math.max(items.findIndex(function(it){ return it.title; }), 0);
+
+  var current = HOME, target = HOME, running = false;
 
   function loop(){
     const delta = target - current;
@@ -1048,8 +1212,15 @@ a{ color:inherit; text-decoration:none; }
     render(current);
     requestAnimationFrame(loop);
   }
+  /* the very first open/close after page load competes with images and
+     fonts still decoding, so it snaps instantly instead of animating --
+     avoids janking straight into that contention. Every interaction after
+     the page has settled glides normally. */
+  var ready = document.readyState === 'complete';
+  if(!ready) addEventListener('load', function(){ ready = true; });
+
   function kick(){
-    if(reduce){ current = target; render(current); return; }
+    if(reduce || !ready){ current = target; render(current); return; }
     if(running) return;
     running = true;
     requestAnimationFrame(loop);
@@ -1059,56 +1230,87 @@ a{ color:inherit; text-decoration:none; }
     kick();
   }
 
-  /* ── swipe / drag sideways ──
-     touch-action:pan-y on the row means a vertical gesture scrolls the page
-     as normal; we only claim the gesture once it commits to horizontal. */
-  var startX = 0, startY = 0, startPos = 0, dragging = false, decided = false;
+  /* ══ DESKTOP: the pointer drives it ══
+     hover opens · click pins · leaving returns to the pinned or first panel */
+  var pinned = null;
+  var REST   = HOME;
 
-  root.addEventListener('pointerdown', function(e){
-    startX = e.clientX; startY = e.clientY;
-    startPos = current;
-    dragging = true; decided = false;
-  });
-
-  root.addEventListener('pointermove', function(e){
-    if(!dragging) return;
-    var dx = e.clientX - startX;
-    var dy = e.clientY - startY;
-
-    if(!decided){
-      if(Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
-      if(Math.abs(dy) > Math.abs(dx)){ dragging = false; return; }  /* it's a scroll */
-      decided = true;
-      root.classList.add('is-dragging');
-      if(root.setPointerCapture) root.setPointerCapture(e.pointerId);
-    }
-
-    /* dragging one open-panel's width moves you one panel along */
-    current = Math.min(Math.max(startPos - dx / OPEN, 0), LAST);
-    target  = current;
-    render(current);
-  });
-
-  function endDrag(e){
-    if(!dragging) return;
-    dragging = false;
-    root.classList.remove('is-dragging');
-    if(root.hasPointerCapture && root.hasPointerCapture(e.pointerId)){
-      root.releasePointerCapture(e.pointerId);
-    }
-    if(decided) goTo(Math.round(current));   /* settle on the nearest panel */
+  function setPinned(i){
+    pinned = i;
+    panels.forEach(function(p, j){ p.classList.toggle('is-pinned', j === i); });
   }
-  root.addEventListener('pointerup', endDrag);
-  root.addEventListener('pointercancel', endDrag);
 
-  /* tap a panel, tab to it, tap a tick, or use the arrow keys */
-  panels.forEach(function(panel, i){
-    panel.addEventListener('click', function(){ if(!decided) goTo(i); });
-    panel.addEventListener('focus', function(){ goTo(i); });
-  });
-  ticks.forEach(function(tick, i){
-    tick.addEventListener('click', function(){ goTo(i); });
-  });
+  /* click-only: no pointerenter/pointerleave -- opening only ever happens
+     from a deliberate click, so a stray hover during page load can't
+     trigger an animation. Clicking the open panel again closes it right
+     away instead of waiting on the pointer to leave. */
+  if(canHover){
+    panels.forEach(function(panel, i){
+      panel.addEventListener('click', function(){
+        if(pinned === i){ setPinned(null); goTo(REST); }
+        else { setPinned(i); goTo(i); }
+      });
+      panel.addEventListener('focus', function(){ goTo(i); });
+    });
+    ticks.forEach(function(tick, i){
+      if(!tick) return;
+      tick.addEventListener('click', function(){ setPinned(i); goTo(i); });
+    });
+  }
+
+  /* ══ TOUCH: swipe / drag sideways, as on the mobile build ══
+     touch-action:pan-y means a vertical gesture still scrolls the page;
+     we only claim the gesture once it commits to horizontal. */
+  if(!canHover){
+    var startX = 0, startY = 0, startPos = 0, dragging = false, decided = false;
+
+    root.addEventListener('pointerdown', function(e){
+      startX = e.clientX; startY = e.clientY;
+      startPos = current;
+      dragging = true; decided = false;
+    });
+
+    root.addEventListener('pointermove', function(e){
+      if(!dragging) return;
+      var dx = e.clientX - startX;
+      var dy = e.clientY - startY;
+
+      if(!decided){
+        if(Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+        if(Math.abs(dy) > Math.abs(dx)){ dragging = false; return; }  /* it's a scroll */
+        decided = true;
+        root.classList.add('is-dragging');
+        if(root.setPointerCapture) root.setPointerCapture(e.pointerId);
+      }
+
+      /* dragging one open-panel's width moves you one panel along */
+      current = Math.min(Math.max(startPos - dx / OPEN, 0), LAST);
+      target  = current;
+      render(current);
+    });
+
+    function endDrag(e){
+      if(!dragging) return;
+      dragging = false;
+      root.classList.remove('is-dragging');
+      if(root.hasPointerCapture && root.hasPointerCapture(e.pointerId)){
+        root.releasePointerCapture(e.pointerId);
+      }
+      if(decided) goTo(Math.round(current));   /* settle on the nearest panel */
+    }
+    root.addEventListener('pointerup', endDrag);
+    root.addEventListener('pointercancel', endDrag);
+
+    panels.forEach(function(panel, i){
+      panel.addEventListener('click', function(){ if(!decided) goTo(i); });
+      panel.addEventListener('focus', function(){ goTo(i); });
+    });
+    ticks.forEach(function(tick, i){
+      if(tick) tick.addEventListener('click', function(){ goTo(i); });
+    });
+  }
+
+  /* keyboard works either way */
   root.addEventListener('keydown', function(e){
     if(e.key === 'ArrowRight'){ e.preventDefault(); goTo(Math.round(current) + 1); }
     if(e.key === 'ArrowLeft'){  e.preventDefault(); goTo(Math.round(current) - 1); }
@@ -1119,12 +1321,12 @@ a{ color:inherit; text-decoration:none; }
 })();
 </script>
 
-
+<!-- ═══════════════════════ SCRIPT 3 — PHOTO MARQUEE ═══════════════════════ -->
 <script>
-/* ═══════════ HERO PHOTO MARQUEE — photos flowing along a curve ═══════════
-   Add your photos to PHOTOS below. 3:4 portrait, ~600x800px is ideal.
-   An entry with an empty src renders as a blank tile, so you can see the
-   flow before the real photos land.
+/* Photos flowing along a curve. Add yours to PHOTOS below — 3:4 portrait,
+   ~600x800px is ideal. An entry with an empty src renders as a blank tile.
+   Desktop: hovering the band slows the flow; hovering a photo lifts it;
+   clicking opens it large to the left.
    ════════════════════════════════════════════════════════════════════════ */
 (function(){
   "use strict";
@@ -1166,8 +1368,9 @@ a{ color:inherit; text-decoration:none; }
 
     baseVelocity: 1.5,        /* % of the path per second */
     direction: "normal",      /* "normal" | "reverse" */
-    repeat: 1,      /* 16 distinct photos fill the curve on their own */
+    repeat: 1,                /* 16 distinct photos fill the curve on their own */
 
+    hoverSpeed: 0.30,         /* how far it slows while the pointer is over it */
     expandedSpeed: 0.25,      /* how far it slows while a photo is open */
     slowDownTau: 90,
 
@@ -1175,7 +1378,7 @@ a{ color:inherit; text-decoration:none; }
     dragSensitivity: 0.1,
     dragVelocityDecay: 0.96,
     dragAwareDirection: false,
-    grabCursor: true,
+    grabCursor: false,        /* desktop reads these as clickable, not draggable */
 
     enableRollingZIndex: true,
     zIndexBase: 1,
@@ -1184,6 +1387,8 @@ a{ color:inherit; text-decoration:none; }
     offsetRotate: "auto",     /* tiles tilt along the curve */
     showPath: false           /* true to see the curve while positioning */
   };
+
+  var canHover = matchMedia("(hover: hover) and (pointer: fine)").matches;
 
   function wrapValue(min, max, v){
     var range = max - min;
@@ -1205,8 +1410,15 @@ a{ color:inherit; text-decoration:none; }
 
     var reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    /* scale the whole stage to fit the box it was dropped into */
-    /* Cover, not contain: take whichever scale is larger so the curve fills the
+    /* the probe exists only to be measured — it carries --mqp-tile-px as a real
+       width, so the browser resolves the clamp before we read it back */
+    var probe = document.createElement("div");
+    probe.className = "mqp-probe";
+    probe.setAttribute("aria-hidden", "true");
+    root.appendChild(probe);
+
+    /* scale the whole stage to fit the box it was dropped into.
+       Cover, not contain: take whichever scale is larger so the curve fills the
        band in both directions, spilling off the sides rather than leaving gaps
        above and below. Tiles are then sized back from --mqp-tile-px, so their
        on-screen size stays predictable however far the stage is scaled. */
@@ -1216,7 +1428,7 @@ a{ color:inherit; text-decoration:none; }
       var y = (root.clientHeight - VB_H * scale) / 2;
       stage.style.transform = "translate(" + x + "px," + y + "px) scale(" + scale + ")";
 
-      var px = parseFloat(getComputedStyle(root).getPropertyValue("--mqp-tile-px")) || 68;
+      var px = probe.getBoundingClientRect().width || 68;
       root.style.setProperty("--mqp-tile-w", (px / scale) + "px");
       root.style.setProperty("--mqp-tile-h", (px * 4 / 3 / scale) + "px");
     }
@@ -1226,6 +1438,7 @@ a{ color:inherit; text-decoration:none; }
 
     var tiles = [];
     var total = PHOTOS.length * CONFIG.repeat;
+    var hoverCount = 0;   /* how many tiles the pointer is currently inside */
 
     for(var r = 0; r < CONFIG.repeat; r++){
       PHOTOS.forEach(function(photo, i){
@@ -1248,8 +1461,14 @@ a{ color:inherit; text-decoration:none; }
           tile.appendChild(img);
         }
         el.appendChild(tile);
-        stage.appendChild(el);
 
+        /* the flow eases off while the pointer rests on a photo */
+        if(canHover){
+          el.addEventListener("mouseenter", function(){ hoverCount++; });
+          el.addEventListener("mouseleave", function(){ hoverCount = Math.max(0, hoverCount - 1); });
+        }
+
+        stage.appendChild(el);
         tiles.push({ el: el, start: (idx * 100) / total, photo: photo });
       });
     }
@@ -1308,7 +1527,9 @@ a{ color:inherit; text-decoration:none; }
         dragVelocity *= 0.9;
         if(Math.abs(dragVelocity) < 0.01) dragVelocity = 0;
       } else {
-        var target = expanded ? CONFIG.expandedSpeed : 1;
+        var target = expanded ? CONFIG.expandedSpeed
+                   : hoverCount > 0 ? CONFIG.hoverSpeed
+                   : 1;
         hoverFactor = lerp(hoverFactor, target, 1 - Math.exp(-delta / CONFIG.slowDownTau));
 
         var moveBy = reduceMotion ? 0
@@ -1360,7 +1581,7 @@ a{ color:inherit; text-decoration:none; }
       dragging = false;
       root.classList.remove("mqp-grabbing");
 
-      /* barely moved? that was a tap, not a drag — open that photo */
+      /* barely moved? that was a click, not a drag — open that photo */
       if(downPt && downItem){
         var moved = Math.hypot(e.clientX - downPt.x, e.clientY - downPt.y);
         if(moved < 6){
@@ -1386,17 +1607,18 @@ a{ color:inherit; text-decoration:none; }
 })();
 </script>
 
-
+<!-- ═══════════════════════ SCRIPT 4 — GAMES DOCK ═══════════════════════ -->
 <script>
-/* ═══════════ GAMES DOCK — a sprung wave of magnification, driven by scroll ═══════════ */
+/* A sprung wave of magnification. On a mouse it follows the cursor; on touch
+   it plays once as the dock scrolls into view. */
 (function(){
   "use strict";
 
   var CONFIG = {
-    maxScale: 1.6,     /* size of the icon at the centre of the wave      */
-    lift: 8,           /* px the magnified icon rises                     */
+    maxScale: 1.65,    /* size of the icon at the centre of the wave      */
+    lift: 10,          /* px the magnified icon rises                     */
     reach: 150,        /* px of influence either side (re-measured below) */
-    span: 0.62,        /* how much of a screen the wave takes to cross    */
+    span: 0.62,        /* how much of a screen the scroll wave takes      */
     spring: { mass: 0.1, stiffness: 150, damping: 12 }
   };
 
@@ -1409,9 +1631,10 @@ a{ color:inherit; text-decoration:none; }
   if(!items.length) return;
 
   var reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var canHover     = matchMedia('(hover: hover)').matches;
+  var canHover     = matchMedia('(hover: hover) and (pointer: fine)').matches;
   var rafId = null, lastTime = 0;
   var dockLeft = 0, dockWidth = 0;
+  var pointerInside = false;
 
   /* Icons scale in place, so their centres never move — measure once and
      only again on resize, rather than every frame. */
@@ -1437,18 +1660,21 @@ a{ color:inherit; text-decoration:none; }
     return p < 0 ? 0 : p > 1 ? 1 : p;
   }
 
-  /* where the wave is centred right now, in viewport px */
+  /* where the scroll wave is centred right now, in viewport px */
   function focusPoint(){
     var p = scrollProgress();
     return (dockLeft - CONFIG.reach) + p * (dockWidth + CONFIG.reach * 2);
   }
 
   function updateTargets(){
-    var focus = focusPoint();
+    /* With a mouse the pointer owns the wave outright — icons rest at full
+       size until you reach them. Touch keeps the scroll-driven wave. */
     for(var i = 0; i < items.length; i++){
-      var d = Math.min(Math.abs(focus - items[i].centre), CONFIG.reach);
-      var wave = 1 - d / CONFIG.reach;
-      var t = Math.max(wave, items[i].hover);        /* pointer and wave share one target */
+      var t = items[i].hover;
+      if(!canHover && !pointerInside){
+        var d = Math.min(Math.abs(focusPoint() - items[i].centre), CONFIG.reach);
+        t = Math.max(t, 1 - d / CONFIG.reach);
+      }
       items[i].target = 1 + (CONFIG.maxScale - 1) * t;
     }
   }
@@ -1511,7 +1737,9 @@ a{ color:inherit; text-decoration:none; }
   });
 
   if(canHover && !reduceMotion){
+    dock.addEventListener('pointerenter', function(){ pointerInside = true; });
     dock.addEventListener('pointermove', function(e){
+      pointerInside = true;
       for(var i = 0; i < items.length; i++){
         var d = Math.min(Math.abs(e.clientX - items[i].centre), CONFIG.reach);
         items[i].hover = 1 - d / CONFIG.reach;
@@ -1519,6 +1747,7 @@ a{ color:inherit; text-decoration:none; }
       start();
     });
     dock.addEventListener('pointerleave', function(){
+      pointerInside = false;
       for(var i = 0; i < items.length; i++) items[i].hover = 0;
       start();
     });

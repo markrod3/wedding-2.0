@@ -1278,7 +1278,7 @@ function openGame(game, levelIdx){
 // linked straight to /games/, or localStorage isn't available).
 function goToOrigin(){
   const origin = load('origin');
-  const validDay     = origin && (origin.day === 'saturday' || origin.day === 'theweekend');
+  const validDay     = origin && (origin.day === 'thecelebration' || origin.day === 'theweekend');
   const validVariant = origin && (origin.variant === 'mobile' || origin.variant === 'web');
   location.href = (validDay && validVariant) ? '/' + origin.day + '/' + origin.variant + '.html' : '/';
 }

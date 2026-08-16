@@ -229,9 +229,12 @@ body{
 
 <script>
 /* EDIT: ROUTES — the code someone enters, and where it sends them */
+/* EDIT: codes are matched case-insensitively (the input is uppercased
+   before lookup), so keys here are stored uppercase even though the
+   password you hand out can be written/typed in any case. */
 var ROUTES = {
-  'MB27SAT': '/saturday/',
-  'MB27WEEKEND': '/theweekend/'
+  'M&B16': '/thecelebration/',
+  'MARK&BERN27': '/theweekend/'
 };
 
 var form    = document.getElementById('gate');
