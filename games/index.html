@@ -178,6 +178,7 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
 .bsec.g-blue{background:var(--blue-tint);}
 .bsec.g-purple{background:var(--purple-tint);}
 .bsec.g-mint{background:var(--mint-tint);}
+.bsec.g-grey{background:var(--grey-soft);}
 .bsec h3{font-family:var(--font-display);font-weight:700;font-size:1.4rem;margin-bottom:10px;}
 .seg{display:flex;gap:5px;background:rgba(255,255,255,.6);border-radius:999px;padding:4px;margin-bottom:6px;}
 .seg button{
@@ -282,6 +283,7 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
 .lb-row.r3 .lb-rank{background:#E9C9A6;}
 .lb-name{flex:1;min-width:0;font-size:.92rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .lb-time{font-size:.94rem;font-weight:700;font-variant-numeric:tabular-nums;}
+.lb-what{flex:0 0 auto;font-size:.8rem;color:var(--ink-soft);text-align:right;}
 .lb-row.me{background:rgba(255,255,255,.85);}
 .lb-empty{padding:16px 6px;font-size:.86rem;color:var(--ink-soft);text-align:center;}
 .lb-form{display:flex;gap:8px;margin-top:16px;}
@@ -563,6 +565,10 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
   <!-- ---------- LEADERBOARD PAGE ---------- -->
   <div class="view scrolls" id="view-board">
     <div class="boards">
+      <section class="bsec g-grey" id="recent-activity">
+        <h3>Latest activity</h3>
+        <div id="recent-mount"></div>
+      </section>
       <p class="boards-intro">Three fastest times on each board. Every hint adds five seconds, and revealing answers keeps a run off the board entirely.</p>
       <div id="boards-mount"></div>
     </div>
@@ -1086,6 +1092,47 @@ async function renderBoard(mount, id, highlight){
   });
 }
 
+// "xw:xw-easy" -> { gameName:'The Midi', levelLabel:'Easy' }, for the
+// activity feed below. Falls back to the raw id if the puzzle can't be
+// found (e.g. old data referencing a since-renamed/removed puzzle).
+function describeBoard(id){
+  const [game, puzzleId] = id.split(':');
+  const meta = GAME_META[game];
+  if (!meta) return null;
+  const puzzle = meta.list().find(p => p.id === puzzleId);
+  return { gameName: meta.name, levelLabel: puzzle ? puzzle.label : '' };
+}
+
+// Latest 3 submissions across every board, regardless of score -- shows
+// who's been playing, not just who's fastest.
+async function renderRecentActivity(mount){
+  mount.innerHTML = '';
+  if (!sb){
+    mount.appendChild(el('div','lb-empty', "Can't reach the leaderboard right now."));
+    return;
+  }
+  const { data, error } = await sb
+    .from('leaderboard')
+    .select('name, game, created_at')
+    .order('created_at', { ascending: false })
+    .limit(3);
+  mount.innerHTML = '';
+  if (error){
+    console.error('Supabase fetch failed:', error);
+    mount.appendChild(el('div','lb-empty', "Couldn't load recent activity right now."));
+    return;
+  }
+  const rows = data || [];
+  if (!rows.length){ mount.appendChild(el('div','lb-empty','No plays yet — be the first.')); return; }
+  rows.forEach(r => {
+    const desc = describeBoard(r.game);
+    const row = el('div','lb-row');
+    row.appendChild(el('span','lb-name', r.name));
+    row.appendChild(el('span','lb-what', desc ? (desc.gameName + ', ' + desc.levelLabel) : r.game));
+    mount.appendChild(row);
+  });
+}
+
 // `game` is the board id shape used throughout, e.g. "xw:xw-easy". Returns
 // the inserted row's id (for highlighting it in the board just rendered) or
 // null if the insert failed -- a failed insert shouldn't crash the sheet.
@@ -1103,6 +1150,7 @@ async function submitScoreToSupabase(name, game, score){
 // The consolidated page: one section per game, difficulty on a segmented
 // control so all nine boards are one tap apart and nothing has to reload.
 function buildBoardsPage(){
+  renderRecentActivity($('#recent-mount'));
   const mount = $('#boards-mount');
   mount.innerHTML = '';
   Object.keys(GAME_META).forEach(game => {
