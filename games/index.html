@@ -482,9 +482,6 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
     <button class="icon-btn" id="btn-board" aria-label="Leaderboard" hidden>
       <svg viewBox="0 0 24 24"><path d="M8 4h8v4.5a4 4 0 01-8 0z"/><path d="M8 5.5H5V7a3 3 0 003 3M16 5.5h3V7a3 3 0 01-3 3"/><path d="M12 12.5V16M9 19.5h6M10.5 16h3"/></svg>
     </button>
-    <button class="icon-btn" id="btn-help" aria-label="How to play" hidden>
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.5 2.5 0 114 2.3c-.9.6-1.6 1-1.6 2.1"/><circle cx="12" cy="17.2" r=".6" fill="currentColor"/></svg>
-    </button>
   </header>
 
   <!-- ---------- LANDING ---------- -->
@@ -501,7 +498,7 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
           <div class="glyph xw"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
           <h2>The Midi</h2>
           <p>A small grid with a long memory. Mostly about us.</p>
-          <div class="foot"><span class="n">Three levels</span><span class="by">By Mark, mostly</span></div>
+          <div class="foot"><span class="n">Three levels</span><span class="by">By the happy couple</span></div>
         </div>
         <div class="levels" data-game="xw">
           <button data-level="0">Easy</button>
@@ -542,7 +539,7 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
           </svg>
           <h2>Strands</h2>
           <p>Find the hidden words and uncover the theme. The theme is always us.</p>
-          <div class="foot"><span class="n">Three levels</span><span class="by">By the happy couple</span></div>
+          <div class="foot"><span class="n">Three levels</span><span class="by">By Mark (mostly)</span></div>
         </div>
         <div class="levels" data-game="st">
           <button data-level="0">Easy</button>
@@ -1131,25 +1128,6 @@ function buildBoardsPage(){
   });
 }
 
-function openLeaderboard(game, idx){
-  const meta = GAME_META[game], list = meta.list();
-  openSheet('<div class="kicker">Leaderboard</div><h3>' + meta.name + '</h3>'
-    + '<div class="seg" id="lb-tabs"></div><div id="lb-mount"></div>'
-    + '<button class="cta" data-close-sheet>Close</button>');
-  const tabs = $('#lb-tabs');
-  list.forEach((p, i) => {
-    const b = el('button', null, p.label);
-    b.setAttribute('aria-pressed', i === idx ? 'true' : 'false');
-    b.addEventListener('click', () => {
-      $$('button', tabs).forEach(x => x.setAttribute('aria-pressed','false'));
-      b.setAttribute('aria-pressed','true');
-      renderBoard($('#lb-mount'), game + ':' + p.id);
-    });
-    tabs.appendChild(b);
-  });
-  renderBoard($('#lb-mount'), game + ':' + list[idx].id);
-}
-
 // End-of-game sheet: how the time was made up, the board, and a place to sign it.
 function resultsSheet(o){
   const id = o.game + ':' + o.puzzleId;
@@ -1198,44 +1176,6 @@ function resultsSheet(o){
   }
 }
 
-/* --- how to play ---------------------------------------------------------- */
-const HELP = {
-  xw: `<div class="kicker">How to play</div><h3>The Midi</h3>
-    <p>Fill every white square so the answers match the clues, across and down.</p>
-    <ul>
-      <li>Tap a square to type. Tap it again to switch between across and down.</li>
-      <li>On a keyboard: arrows move, <b>space</b> flips direction, <b>tab</b> jumps to the next clue.</li>
-      <li>Yellow is where your next letter goes; blue is the rest of that answer.</li>
-      <li>The clock starts on your first letter. Each <b>Check</b> costs 5 seconds, and any <b>Reveal</b> keeps the run off the leaderboard.</li>
-    </ul>
-    <button class="cta" data-close-sheet>Got it</button>`,
-
-  cx: `<div class="kicker">How to play</div><h3>Connections</h3>
-    <p>Sort the sixteen words into four groups of four that share something.</p>
-    <ul>
-      <li>Select four, then press <b>Submit</b>. You get four mistakes.</li>
-      <li>Three right out of four and we'll tell you you're <b>one away</b>.</li>
-      <li><b>Shuffle</b> is surprisingly good at breaking a bad hunch.</li>
-      <li>Only a completed board goes on the leaderboard.</li>
-    </ul>
-    <div class="legend-row"><span class="legend-swatch" style="background:var(--cx-yellow)"></span> Yellow — the most straightforward</div>
-    <div class="legend-row"><span class="legend-swatch" style="background:var(--cx-green)"></span> Green</div>
-    <div class="legend-row"><span class="legend-swatch" style="background:var(--cx-blue)"></span> Blue</div>
-    <div class="legend-row"><span class="legend-swatch" style="background:var(--cx-purple)"></span> Purple — wordplay, always trouble</div>
-    <button class="cta" data-close-sheet>Got it</button>`,
-
-  st: `<div class="kicker">How to play</div><h3>Strands</h3>
-    <p>Every letter on the board belongs to exactly one answer, and all of them fit the theme.</p>
-    <ul>
-      <li>Drag across letters to spell a word — or tap them one at a time and tap the last letter again to submit.</li>
-      <li>Letters connect in any direction, diagonals included, and the path can bend.</li>
-      <li>Theme words turn <b style="color:#4a9dc0">blue</b>.</li>
-      <li>One answer is the <b>spangram</b>: it describes the theme and reaches from one side of the board to the other. It turns <b style="color:#c9a400">yellow</b>.</li>
-      <li>Stuck? Find any three ordinary words hiding in the board to earn a hint — each one you spend adds 5 seconds.</li>
-    </ul>
-    <button class="cta" data-close-sheet>Got it</button>`
-};
-
 /* --- router --------------------------------------------------------------- */
 const GAMES = {};                       // filled in by the modules below
 let currentView = 'hub';
@@ -1251,7 +1191,6 @@ function show(view){
   $('#view-' + view).classList.add('active');
   const inGame = !!GAMES[view];
   $('#btn-home').hidden  = false;  // always visible: hub -> origin invite, elsewhere -> hub
-  $('#btn-help').hidden  = !inGame;
   $('#btn-board').hidden = !inGame;
   if (view === 'hub')        setTitle('Games', CONFIG.coupleNames);
   else if (view === 'board') setTitle('Leaderboard', 'Nine boards, three times each');
@@ -1283,19 +1222,25 @@ function goToOrigin(){
   location.href = (validDay && validVariant) ? '/' + origin.day + '/' + origin.variant + '.html' : '/';
 }
 
-// Backing out mid-attempt throws the run away, so make sure that's intended.
-function goBack(){
-  if (currentView === 'hub'){ goToOrigin(); return; }
+// Leaving a game mid-attempt throws the run away, so make sure that's
+// intended before navigating anywhere else -- used by both the back button
+// and the leaderboard trophy.
+function leaveGameThen(onLeave){
   const G = GAMES[currentView];
   if (G && G.inProgress && G.inProgress()){
     openSheet(`<div class="kicker">Hold on</div><h3>Leave this puzzle?</h3>
       <p>Your progress and your time will be lost — coming back starts a brand new attempt.</p>
       <button class="cta danger" id="leave-yes">Leave and lose it</button>
       <button class="cta secondary" data-close-sheet>Keep playing</button>`);
-    $('#leave-yes').addEventListener('click', () => { closeSheet(); show('hub'); });
+    $('#leave-yes').addEventListener('click', () => { closeSheet(); onLeave(); });
     return;
   }
-  show('hub');
+  onLeave();
+}
+
+function goBack(){
+  if (currentView === 'hub'){ goToOrigin(); return; }
+  leaveGameThen(() => show('hub'));
 }
 
 document.addEventListener('keydown', e => {
@@ -1305,8 +1250,7 @@ document.addEventListener('keydown', e => {
 });
 
 $('#btn-home').addEventListener('click', goBack);
-$('#btn-help').addEventListener('click', () => openSheet(HELP[currentView]));
-$('#btn-board').addEventListener('click', () => openLeaderboard(currentView, GAMES[currentView].idx));
+$('#btn-board').addEventListener('click', () => leaveGameThen(() => show('board')));
 $('#go-boards').addEventListener('click', () => show('board'));
 $$('.levels').forEach(row => {
   row.addEventListener('click', e => {
