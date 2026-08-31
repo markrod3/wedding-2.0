@@ -7,7 +7,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Alice&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Alice&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Libre+Franklin:wght@500;700;800&display=swap" rel="stylesheet">
 
 <!-- ══════════════════════════════════════════════════════════════════════
      DESKTOP / WEB EDITION
@@ -610,6 +610,7 @@ a{ color:inherit; text-decoration:none; }
 }
 .registry__copy p{ margin:0; letter-spacing:-.01em; line-height:1.5; max-width:46ch; }
 .registry__copy h2{ letter-spacing:-.025em; }
+.registry__left{ min-width:0; }   /* lets the ticker's clipped scroll track size to the column, not its own content */
 
 /* ── games dock — icons float free, so each magnification has room ── */
 .dock{
@@ -629,6 +630,56 @@ a{ color:inherit; text-decoration:none; }
 .dock__item svg{ width:100%; height:100%; display:block; }
 .dock__item:focus-visible{ outline:2.5px solid var(--ink); outline-offset:4px; }
 @media (hover:none){ .dock__item{ transform:none; } }
+
+/* ── "latest activity" ticker, styled after the NYT Games app ── */
+.nyt-ticker{
+  display:flex; align-items:center; gap:12px;
+  width:100%; margin:16px 0 0;
+  background:#121212; border-radius:999px;
+  padding:9px 9px 9px 16px;
+  font-family:'Libre Franklin','Helvetica Neue',Helvetica,Arial,sans-serif;
+  overflow:hidden;
+}
+.nyt-ticker[hidden]{ display:none; }
+.nyt-ticker__tag{
+  flex:0 0 auto; display:flex; align-items:center; gap:6px;
+  font-size:.62rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase;
+  color:#fff; white-space:nowrap;
+}
+.nyt-ticker__tag::before{
+  content:""; width:6px; height:6px; border-radius:50%; background:#6EDB8F;
+  animation:nytPulse 1.8s ease-out infinite;
+}
+@keyframes nytPulse{
+  0%{ box-shadow:0 0 0 0 rgba(110,219,143,.55); }
+  70%{ box-shadow:0 0 0 6px rgba(110,219,143,0); }
+  100%{ box-shadow:0 0 0 0 rgba(110,219,143,0); }
+}
+.nyt-ticker__viewport{
+  flex:1 1 auto; min-width:0; overflow:hidden;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);
+          mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);
+}
+.nyt-ticker__track{
+  display:flex; align-items:center; width:max-content;
+  animation:nytScroll 20s linear infinite;
+}
+.nyt-ticker__track.no-scroll{ animation:none; }
+@keyframes nytScroll{
+  from{ transform:translateX(0); }
+  to{ transform:translateX(-50%); }
+}
+.nyt-ticker__item{
+  display:flex; align-items:center; gap:7px;
+  font-size:.78rem; font-weight:500; color:#fff; white-space:nowrap;
+  padding:0 16px;
+}
+.nyt-ticker__item b{ font-weight:700; }
+.nyt-ticker__icon{ width:15px; height:15px; flex:0 0 auto; display:block; border-radius:4px; overflow:hidden; }
+.nyt-ticker__sep{ color:rgba(255,255,255,.35); font-size:.6rem; }
+@media (prefers-reduced-motion: reduce){
+  .nyt-ticker__track{ animation:none; }
+}
 
 .figure{
   position:relative; width:min(430px,100%); margin:0 0 0 auto;
@@ -875,6 +926,13 @@ a{ color:inherit; text-decoration:none; }
           </script>
 
         </nav>
+
+        <div class="nyt-ticker" id="nytTicker" hidden aria-label="Latest game activity">
+          <span class="nyt-ticker__tag">Live in Games</span>
+          <div class="nyt-ticker__viewport">
+            <div class="nyt-ticker__track" id="nytTickerTrack"></div>
+          </div>
+        </div>
       </div>
 
       <div class="figure fade">
@@ -1734,6 +1792,93 @@ a{ color:inherit; text-decoration:none; }
 
   measure();
   start();
+})();
+</script>
+
+<!-- ═══════════════════════ NYT GAMES–STYLE ACTIVITY TICKER ═══════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(async function(){
+  'use strict';
+
+  var SUPABASE_CONFIG = {
+    url    : 'https://jgsvgvuitnkhzfzcrtdk.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impnc3ZndnVpdG5raHpmemNydGRrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0MzYzODIsImV4cCI6MjEwMjAxMjM4Mn0.lZflopZL3-zZ-uaTecmDrCbTJVIZmnPVLd4pUfDWiew'
+  };
+  var sb = null;
+  try {
+    if (window.supabase && window.supabase.createClient){
+      sb = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+    }
+  } catch (err) { console.error('Supabase client init failed; activity ticker disabled.', err); }
+
+  var ticker = document.getElementById('nytTicker');
+  var track  = document.getElementById('nytTickerTrack');
+  if (!ticker || !track || !sb) return;
+
+  var GAME_NAMES = { xw: 'The Midi', cx: 'Connections', st: 'Strands' };
+  var ICONS = {
+    xw: '<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="32" fill="#6E93D6"/><g fill="none" stroke="#fff" stroke-width="3"><rect x="16" y="16" width="32" height="32" rx="2"/><path d="M26.7 16v32M37.3 16v32M16 26.7h32M16 37.3h32"/></g><rect x="16" y="16" width="10.7" height="10.7" fill="#fff" opacity=".92"/></svg>',
+    cx: '<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="32" fill="#fff"/><rect x="14" y="14" width="16" height="16" rx="3" fill="#F9DF6D"/><rect x="34" y="14" width="16" height="16" rx="3" fill="#A0C35A"/><rect x="14" y="34" width="16" height="16" rx="3" fill="#B0C4EF"/><rect x="34" y="34" width="16" height="16" rx="3" fill="#BA81C5"/></svg>',
+    st: '<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="32" fill="#AEDFDF"/><path d="M20 42c0-8 6-10 12-10s12-2 12-10" fill="none" stroke="#1D6B6B" stroke-width="3.5" stroke-linecap="round"/><g fill="#1D6B6B"><circle cx="20" cy="42" r="4.5"/><circle cx="32" cy="32" r="4.5"/><circle cx="44" cy="22" r="4.5"/></g></svg>'
+  };
+
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+    });
+  }
+
+  /* "xw:xw-easy" -> { gameName:'The Midi', levelLabel:'Easy' } */
+  function describe(row){
+    var parts = (row.game || '').split(':');
+    var game = parts[0], puzzleId = parts[1] || '';
+    var name = GAME_NAMES[game];
+    if (!name) return null;
+    var diff = puzzleId.split('-').pop();
+    var label = diff ? diff.charAt(0).toUpperCase() + diff.slice(1) : '';
+    return { name: row.name, gameName: name, levelLabel: label, icon: ICONS[game] || '' };
+  }
+
+  function buildItem(d){
+    var item = document.createElement('span');
+    item.className = 'nyt-ticker__item';
+    item.innerHTML = '<span class="nyt-ticker__icon">' + d.icon + '</span>' +
+      '<span><b>' + esc(d.name) + '</b> played <b>' + esc(d.gameName) + '</b>' +
+      (d.levelLabel ? ' · ' + esc(d.levelLabel) : '') + '</span>';
+    return item;
+  }
+  function sep(){
+    var s = document.createElement('span');
+    s.className = 'nyt-ticker__sep';
+    s.textContent = '✦';
+    s.setAttribute('aria-hidden', 'true');
+    return s;
+  }
+
+  try {
+    var res = await sb.from('leaderboard')
+      .select('name, game, created_at')
+      .order('created_at', { ascending: false })
+      .limit(3);
+    if (res.error){ console.error('Activity ticker fetch failed:', res.error); return; }
+
+    var described = (res.data || []).map(describe).filter(Boolean);
+    if (!described.length) return;
+
+    /* the list is duplicated back-to-back so the scroll loop is seamless */
+    var copies = described.length > 1 ? 2 : 1;
+    for (var c = 0; c < copies; c++){
+      described.forEach(function(d){
+        track.appendChild(buildItem(d));
+        track.appendChild(sep());
+      });
+    }
+    if (copies === 1) track.classList.add('no-scroll');
+    ticker.hidden = false;
+  } catch (err) {
+    console.error('Activity ticker fetch failed:', err);
+  }
 })();
 </script>
 
