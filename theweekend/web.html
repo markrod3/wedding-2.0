@@ -635,8 +635,9 @@ a{ color:inherit; text-decoration:none; }
 /* ── "latest activity" ticker, styled after the NYT Games app ── */
 .nyt-ticker{
   display:flex; align-items:center; gap:12px;
-  width:100%; margin:16px 0 0;
-  background:#121212; border-radius:999px;
+  width:100%; margin:28px 0 0;
+  background:var(--ink); border-radius:999px;
+  box-shadow:0 6px 16px rgba(69,26,3,.18);
   padding:9px 9px 9px 16px;
   font-family:'Libre Franklin','Helvetica Neue',Helvetica,Arial,sans-serif;
   overflow:hidden;
@@ -645,16 +646,16 @@ a{ color:inherit; text-decoration:none; }
 .nyt-ticker__tag{
   flex:0 0 auto; display:flex; align-items:center; gap:6px;
   font-size:.62rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase;
-  color:#fff; white-space:nowrap;
+  color:var(--cream); white-space:nowrap;
 }
 .nyt-ticker__tag::before{
-  content:""; width:6px; height:6px; border-radius:50%; background:#6EDB8F;
+  content:""; width:6px; height:6px; border-radius:50%; background:var(--blue);
   animation:nytPulse 1.8s ease-out infinite;
 }
 @keyframes nytPulse{
-  0%{ box-shadow:0 0 0 0 rgba(110,219,143,.55); }
-  70%{ box-shadow:0 0 0 6px rgba(110,219,143,0); }
-  100%{ box-shadow:0 0 0 0 rgba(110,219,143,0); }
+  0%{ box-shadow:0 0 0 0 rgba(84,121,162,.55); }
+  70%{ box-shadow:0 0 0 6px rgba(84,121,162,0); }
+  100%{ box-shadow:0 0 0 0 rgba(84,121,162,0); }
 }
 .nyt-ticker__viewport{
   flex:1 1 auto; min-width:0; overflow:hidden;
@@ -672,12 +673,12 @@ a{ color:inherit; text-decoration:none; }
 }
 .nyt-ticker__item{
   display:flex; align-items:center; gap:7px;
-  font-size:.78rem; font-weight:500; color:#fff; white-space:nowrap;
+  font-size:.78rem; font-weight:500; color:var(--cream); white-space:nowrap;
   padding:0 16px;
 }
 .nyt-ticker__item b{ font-weight:700; }
 .nyt-ticker__icon{ width:15px; height:15px; flex:0 0 auto; display:block; border-radius:4px; overflow:hidden; }
-.nyt-ticker__sep{ color:rgba(255,255,255,.35); font-size:.6rem; }
+.nyt-ticker__sep{ color:rgba(250,231,198,.4); font-size:.6rem; }
 @media (prefers-reduced-motion: reduce){
   .nyt-ticker__track{ animation:none; }
 }
