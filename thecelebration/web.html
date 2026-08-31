@@ -1366,13 +1366,9 @@ a{ color:inherit; text-decoration:none; }
     path: "M1 352.434C58.5872 398.935 387.926 468.938 482.583 352.434C600.905 206.805 525.516 99.7789 427.332 162.961C329.149 226.144 352.902 385.723 515.041 410.302C644.752 429.966 943.56 324.94 995 299.5",
     viewBox: [0, 0, 996, 569],   /* padded: the curve rises above its own artboard, and rotated tiles need room */
 
-    baseVelocity: 1.5,        /* % of the path per second */
+    baseVelocity: 1.5,        /* % of the path per second -- constant, no slowdown on hover or open */
     direction: "normal",      /* "normal" | "reverse" */
     repeat: 1,                /* 16 distinct photos fill the curve on their own */
-
-    hoverSpeed: 0.30,         /* how far it slows while the pointer is over it */
-    expandedSpeed: 0.25,      /* how far it slows while a photo is open */
-    slowDownTau: 90,
 
     draggable: true,
     dragSensitivity: 0.1,
@@ -1388,13 +1384,10 @@ a{ color:inherit; text-decoration:none; }
     showPath: false           /* true to see the curve while positioning */
   };
 
-  var canHover = matchMedia("(hover: hover) and (pointer: fine)").matches;
-
   function wrapValue(min, max, v){
     var range = max - min;
     return (((v - min) % range) + range) % range + min;
   }
-  function lerp(a, b, t){ return a + (b - a) * t; }
 
   function init(root){
     var stage  = root.querySelector(".mqp-stage");
@@ -1438,7 +1431,6 @@ a{ color:inherit; text-decoration:none; }
 
     var tiles = [];
     var total = PHOTOS.length * CONFIG.repeat;
-    var hoverCount = 0;   /* how many tiles the pointer is currently inside */
 
     for(var r = 0; r < CONFIG.repeat; r++){
       PHOTOS.forEach(function(photo, i){
@@ -1461,13 +1453,6 @@ a{ color:inherit; text-decoration:none; }
           tile.appendChild(img);
         }
         el.appendChild(tile);
-
-        /* the flow eases off while the pointer rests on a photo */
-        if(canHover){
-          el.addEventListener("mouseenter", function(){ hoverCount++; });
-          el.addEventListener("mouseleave", function(){ hoverCount = Math.max(0, hoverCount - 1); });
-        }
-
         stage.appendChild(el);
         tiles.push({ el: el, start: (idx * 100) / total, photo: photo });
       });
@@ -1475,8 +1460,8 @@ a{ color:inherit; text-decoration:none; }
 
     var base = 0;
     var dirFactor = CONFIG.direction === "normal" ? 1 : -1;
-    var hoverFactor = 1, dragVelocity = 0;
-    var dragging = false, expanded = false;
+    var dragVelocity = 0;
+    var dragging = false;
     var last = performance.now();
 
     /* the opened photo */
@@ -1493,12 +1478,10 @@ a{ color:inherit; text-decoration:none; }
       expandImg.src = big;
       expandImg.alt = photo.alt || "";
       band.classList.add("is-open");
-      expanded = true;
     }
     function closePhoto(){
       if(!band) return;
       band.classList.remove("is-open");
-      expanded = false;
     }
     if(expandEl){
       expandEl.addEventListener("click", closePhoto);
@@ -1527,13 +1510,9 @@ a{ color:inherit; text-decoration:none; }
         dragVelocity *= 0.9;
         if(Math.abs(dragVelocity) < 0.01) dragVelocity = 0;
       } else {
-        var target = expanded ? CONFIG.expandedSpeed
-                   : hoverCount > 0 ? CONFIG.hoverSpeed
-                   : 1;
-        hoverFactor = lerp(hoverFactor, target, 1 - Math.exp(-delta / CONFIG.slowDownTau));
-
+        // constant speed always -- no slowdown on hover or while a photo is open
         var moveBy = reduceMotion ? 0
-          : dirFactor * CONFIG.baseVelocity * (delta / 1000) * hoverFactor;
+          : dirFactor * CONFIG.baseVelocity * (delta / 1000);
 
         if(CONFIG.draggable){
           moveBy += dragVelocity;
