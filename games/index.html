@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Bernadette &amp; Mark — Games</title>
-<meta name="description" content="Three puzzles, three levels each, made for our wedding.">
+<meta name="description" content="Two puzzles, three levels each, made for our wedding.">
 <meta name="color-scheme" content="light">
 <meta name="supported-color-schemes" content="light">
 <meta name="theme-color" content="#FFDA00">
@@ -20,8 +20,8 @@
      3. LANDING      game cards + difficulty bars
      4. BOARDS PAGE  the consolidated leaderboard
      5. GAME FRAME   shared chrome, sized to fit the viewport exactly
-     6. CROSSWORD / 7. CONNECTIONS / 8. STRANDS
-     9. MARKUP  ·  10. DATA (edit the puzzles here)  ·  11. ENGINE
+     6. CONNECTIONS / 7. STRANDS
+     8. MARKUP  ·  9. DATA (edit the puzzles here)  ·  10. ENGINE
    ============================================================================ */
 
 /* ===== 1. TOKENS ========================================================== */
@@ -34,13 +34,11 @@
 
   /* Games-app palette */
   --splash:#FFDA00;
-  --blue:#7C90DF;      --blue-soft:#A8BAF2;   --blue-tint:#DDE3FA;
   --purple:#B3A5F5;    --purple-soft:#C9BFF8; --purple-tint:#E7E2FD;
   --mint:#BCDDD1;      --mint-soft:#D2E8E0;   --mint-tint:#EAF4F0;
   --grey-card:#D6D6D6; --grey-soft:#E6E6E6;
 
-  --xw-block:#121212; --xw-cell:#FFFFFF; --xw-cursor:#FFDA00; --xw-word:#A7D8FF;
-  --xw-wrong:#E4584B; --xw-revealed:#2A7AE2;
+  --danger:#E4584B;
 
   --cx-tile:#EFEFE6; --cx-selected:#5A594E;
   --cx-yellow:#F9DF6D; --cx-green:#A0C35A; --cx-blue:#B0C4EF; --cx-purple:#BA81C5;
@@ -151,7 +149,6 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
 .levels button:hover{filter:brightness(.97);}
 .levels button:active{transform:translateY(2px);box-shadow:0 1px 0 -1px rgba(0,0,0,.1);}
 
-.g-blue   .gcard{background:var(--blue);}     .g-blue   .levels button{background:var(--blue-soft);}
 .g-purple .gcard{background:var(--purple);}   .g-purple .levels button{background:var(--purple-soft);}
 .g-mint   .gcard{background:var(--mint);}     .g-mint   .levels button{background:var(--mint-soft);}
 .g-grey   .gcard{background:var(--grey-card);}
@@ -163,9 +160,6 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
 
 /* little game glyphs, drawn in CSS so nothing has to load */
 .glyph{border-radius:9px;overflow:hidden;display:grid;}
-.glyph.xw{grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:2px;background:#121212;padding:3px;}
-.glyph.xw i{background:#fff;border-radius:1px;}
-.glyph.xw i:nth-child(2),.glyph.xw i:nth-child(4),.glyph.xw i:nth-child(9){background:#121212;}
 .glyph.cx{grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:2px;background:#121212;padding:3px;}
 .glyph.cx i{background:#9E5FB0;border-radius:1px;}
 .glyph.cx i:nth-child(3),.glyph.cx i:nth-child(5){background:#fff;}
@@ -175,7 +169,6 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
 .boards{padding:22px 16px calc(40px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto;width:100%;}
 .boards-intro{font-size:.9rem;line-height:1.55;color:var(--ink-soft);margin-bottom:22px;}
 .bsec{border-radius:var(--radius);padding:18px 18px 14px;margin-bottom:16px;}
-.bsec.g-blue{background:var(--blue-tint);}
 .bsec.g-purple{background:var(--purple-tint);}
 .bsec.g-mint{background:var(--mint-tint);}
 .bsec.g-grey{background:var(--grey-soft);}
@@ -227,7 +220,7 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
 .gbar .spacer{margin-left:auto;}
 .clockread{display:flex;align-items:center;gap:6px;font-size:.85rem;font-weight:700;font-variant-numeric:tabular-nums;}
 .clockread svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;}
-.clockread .pen{color:var(--xw-wrong);font-size:.76rem;}
+.clockread .pen{color:var(--danger);font-size:.76rem;}
 .fitarea{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;width:100%;padding:8px 0;}
 
 /* --- modal / toast / confetti -------------------------------------------- */
@@ -252,7 +245,7 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
 .sheet .cta:hover{opacity:.86;}
 .sheet .cta:active{transform:scale(.97);}
 .sheet .cta.secondary{background:none;color:var(--ink);border:1px solid var(--ink);margin-top:9px;}
-.sheet .cta.danger{background:var(--xw-wrong);}
+.sheet .cta.danger{background:var(--danger);}
 .legend-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:.88rem;}
 .legend-swatch{width:22px;height:22px;border-radius:4px;flex:0 0 auto;}
 .sheet p.note{font-size:.85rem;background:var(--paper-warm);border-radius:8px;padding:11px 13px;color:var(--ink-soft);}
@@ -302,84 +295,7 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
 .score-line.total b{font-family:var(--font-display);font-size:1.35rem;}
 
 
-/* ===== 6. CROSSWORD ======================================================= */
-.menu-wrap{position:relative;}
-.menu{position:absolute;right:0;top:calc(100% + 6px);z-index:50;background:var(--paper);
-  border:1px solid var(--rule);border-radius:8px;box-shadow:0 14px 34px -14px rgba(0,0,0,.32);
-  min-width:166px;padding:5px;opacity:0;visibility:hidden;transform:translateY(-6px);
-  transition:opacity .2s var(--ease),transform .2s var(--ease),visibility .2s;}
-.menu.open{opacity:1;visibility:visible;transform:none;}
-.menu button{display:block;width:100%;text-align:left;padding:9px 12px;border-radius:5px;font-size:.84rem;}
-.menu button:hover{background:var(--paper-warm);}
-.menu hr{border:none;border-top:1px solid var(--rule);margin:5px 0;}
-
-#xw-fit{position:relative;}
-.xw-body{display:flex;flex-direction:column;flex:1;min-height:0;}
-.xw-left{display:flex;flex-direction:column;flex:1;min-height:0;}
-.xw-grid{display:grid;border:2px solid var(--rule-strong);background:var(--rule-strong);
-  gap:1px;touch-action:manipulation;}
-.xw-cell{position:relative;background:var(--xw-cell);display:grid;place-items:center;
-  overflow:hidden;transition:background .12s linear;}
-.xw-cell.block{background:var(--xw-block);}
-.xw-cell.in-word{background:var(--xw-word);}
-.xw-cell.cursor{background:var(--xw-cursor);}
-.xw-cell .num{position:absolute;top:1px;left:2px;font-size:.55em;font-weight:600;line-height:1;pointer-events:none;}
-.xw-cell .ltr{font-size:1em;font-weight:500;line-height:1;text-transform:uppercase;transform:translateY(6%);}
-.xw-cell .ltr.pop{animation:letterPop .16s var(--ease);}
-@keyframes letterPop{from{transform:translateY(6%) scale(.55);opacity:.4;}to{transform:translateY(6%) scale(1);opacity:1;}}
-.xw-cell.wrong::after{content:'';position:absolute;inset:0;
-  background:linear-gradient(to top left,transparent calc(50% - .8px),var(--xw-wrong) calc(50% - .8px),var(--xw-wrong) calc(50% + .8px),transparent calc(50% + .8px));}
-.xw-cell.revealed .ltr{color:var(--xw-revealed);}
-.xw-cell.correct-flash{animation:cellFlash .5s var(--ease);}
-@keyframes cellFlash{0%{background:var(--xw-cursor);}55%{background:#B6E8A8;}100%{background:var(--xw-word);}}
-.xw-cell.finale{animation:cellFinale .7s var(--ease) both;}
-@keyframes cellFinale{0%{transform:scale(1);background:var(--xw-cell);}
-  40%{transform:scale(.82);background:var(--xw-cursor);}100%{transform:scale(1);background:var(--xw-cell);}}
-.xw-pause{position:absolute;inset:0;background:rgba(255,255,255,.97);display:none;
-  flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:5;
-  border:2px solid var(--rule-strong);}
-.xw-pause.on{display:flex;}
-
-.xw-cluebar{flex:0 0 auto;display:flex;margin:6px 0;background:var(--xw-word);border-radius:4px;overflow:hidden;}
-.xw-cluebar .arrow{flex:0 0 38px;display:grid;place-items:center;transition:background .16s;}
-.xw-cluebar .arrow:hover{background:rgba(0,0,0,.07);}
-.xw-cluebar .arrow svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
-.xw-cluebar .text{flex:1;display:flex;align-items:center;min-height:48px;padding:8px 4px;font-size:.88rem;font-weight:500;line-height:1.3;}
-.xw-cluebar .text b{font-weight:800;margin-right:7px;white-space:nowrap;}
-
-.xw-lists{display:none;}
-.xw-clue-col{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;}
-.xw-clue-col h4{font-size:.68rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;
-  padding-bottom:6px;border-bottom:1px solid var(--ink);margin-bottom:4px;}
-.xw-clue-col ol{list-style:none;overflow-y:auto;flex:1;min-height:0;padding-right:4px;}
-.xw-clue{display:flex;gap:9px;padding:6px 8px;font-size:.84rem;line-height:1.35;cursor:pointer;
-  border-left:3px solid transparent;transition:background .16s,border-color .16s;}
-.xw-clue:hover{background:var(--paper-warm);}
-.xw-clue b{font-weight:700;min-width:17px;text-align:right;}
-.xw-clue.in-word{background:var(--xw-word);}
-.xw-clue.active{background:var(--xw-cursor);border-left-color:var(--ink);}
-.xw-clue.done{color:var(--ink-faint);}
-
-.kb{flex:0 0 auto;background:var(--paper-warm);padding:6px 3px calc(6px + env(safe-area-inset-bottom));
-  border-top:1px solid var(--rule);}
-.kb-row{display:flex;justify-content:center;gap:5px;margin-bottom:5px;}
-.kb-row:last-child{margin-bottom:0;}
-.kb button{flex:1;max-width:38px;height:42px;border-radius:5px;background:var(--paper);
-  font-size:1rem;font-weight:600;box-shadow:0 1px 0 rgba(0,0,0,.22);display:grid;place-items:center;
-  transition:transform .08s,background .12s;}
-.kb button:active{transform:translateY(1px) scale(.94);background:var(--xw-word);}
-.kb button.wide{max-width:56px;flex:1.4;}
-.kb button svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
-
-@media (min-width:900px){
-  #view-xw .gpad{max-width:960px;}
-  .xw-body{flex-direction:row;gap:24px;}
-  .xw-left{flex:0 0 460px;}
-  .xw-lists{display:flex;gap:20px;flex:1;min-width:0;min-height:0;padding:10px 0;}
-  .kb{display:none;}
-}
-
-/* ===== 7. CONNECTIONS ===================================================== */
+/* ===== 6. CONNECTIONS ===================================================== */
 #view-cx .gpad{max-width:520px;}
 .cx-prompt{flex:0 0 auto;font-size:.9rem;font-weight:500;text-align:center;padding:8px 0 4px;}
 .cx-board{flex:1;min-height:0;display:flex;flex-direction:column;gap:7px;padding:4px 0;}
@@ -414,7 +330,7 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
 .cx-share{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:1.3rem;line-height:1.35;
   text-align:center;letter-spacing:2px;margin:12px 0 4px;}
 
-/* ===== 8. STRANDS ========================================================= */
+/* ===== 7. STRANDS ========================================================= */
 #view-st .gpad{max-width:460px;}
 .st-clue{flex:0 0 auto;border:1px solid var(--ink);border-radius:8px;padding:10px 14px;text-align:center;margin:8px 0 6px;}
 .st-clue .kicker{font-size:.6rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);}
@@ -449,9 +365,7 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
 
 @media (prefers-color-scheme: dark){
   html,body{background-color:#FFF;color:var(--ink);}
-  .page-bg,.app,.topbar,.sheet,.menu,.kb button,.lb-form input,.xw-cell{background-color:var(--paper);}
-  .xw-cell.block{background-color:var(--xw-block);}
-  .kb{background-color:var(--paper-warm);}
+  .page-bg,.app,.topbar,.sheet,.lb-form input{background-color:var(--paper);}
   .cx-tile{background-color:var(--cx-tile);}
   .cx-tile.sel{background-color:var(--cx-selected);color:var(--paper);}
   .toast{background-color:var(--ink);color:var(--paper);}
@@ -465,7 +379,7 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
 </head>
 <body>
 
-<!-- ===== 9. MARKUP ======================================================== -->
+<!-- ===== 8. MARKUP ======================================================== -->
 <div class="page-bg" aria-hidden="true"></div>
 
 <div id="splash">
@@ -493,20 +407,6 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
         <div class="couple">Bernadette &amp; Mark · <span id="hub-date">16–17 January 2027</span></div>
         <h1>A little something while you wait</h1>
         <p class="hub-sub">If there&rsquo;s one thing about us, we love a good game. Get to know us better and see where you land on the leaderboard!</p>
-      </div>
-
-      <div class="gcard-group g-blue">
-        <div class="gcard">
-          <div class="glyph xw"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-          <h2>The Midi</h2>
-          <p>A small grid with a long memory. Mostly about us.</p>
-          <div class="foot"><span class="n">Three levels</span><span class="by">By the happy couple</span></div>
-        </div>
-        <div class="levels" data-game="xw">
-          <button data-level="0">Easy</button>
-          <button data-level="1">Medium</button>
-          <button data-level="2">Hard</button>
-        </div>
       </div>
 
       <div class="gcard-group g-purple">
@@ -554,7 +454,7 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
         <button class="gcard wide-link" id="go-boards">
           <div>
             <h2>Leaderboard</h2>
-            <p>Nine boards. Find out who's been quietly practising.</p>
+            <p>Six boards. Find out who's been quietly practising.</p>
           </div>
           <span class="arrow">→</span>
         </button>
@@ -569,62 +469,9 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
         <h3>Latest activity</h3>
         <div id="recent-mount"></div>
       </section>
-      <p class="boards-intro">Three fastest times on each board. Every hint adds five seconds, and revealing answers keeps a run off the board entirely.</p>
+      <p class="boards-intro">Three fastest times on each board. Every Strands hint adds five seconds.</p>
       <div id="boards-mount"></div>
     </div>
-  </div>
-
-  <!-- ---------- CROSSWORD ---------- -->
-  <div class="gameview" id="view-xw">
-    <div class="gpad">
-      <div class="gbar">
-        <span class="lvl" id="xw-lvl">Easy</span>
-        <button class="icon-btn" id="xw-playpause" aria-label="Pause timer">
-          <svg viewBox="0 0 24 24"><rect x="8" y="6" width="3" height="12" rx="1"/><rect x="14" y="6" width="3" height="12" rx="1"/></svg>
-        </button>
-        <span class="clockread"><span id="xw-timer">0:00</span><span class="pen" id="xw-pen"></span></span>
-        <span class="spacer"></span>
-        <div class="menu-wrap">
-          <button class="pill ghost" id="xw-check-btn">Check</button>
-          <div class="menu" id="xw-check-menu">
-            <button data-check="square">Check square</button>
-            <button data-check="word">Check word</button>
-            <button data-check="puzzle">Check puzzle</button>
-          </div>
-        </div>
-        <div class="menu-wrap">
-          <button class="pill ghost" id="xw-reveal-btn">Reveal</button>
-          <div class="menu" id="xw-reveal-menu">
-            <button data-reveal="square">Reveal square</button>
-            <button data-reveal="word">Reveal word</button>
-            <button data-reveal="puzzle">Reveal puzzle</button>
-            <hr>
-            <button data-reveal="clear">Start over</button>
-          </div>
-        </div>
-      </div>
-      <div class="xw-body">
-        <div class="xw-left">
-          <div class="fitarea" id="xw-fit">
-            <div class="xw-grid" id="xw-grid"></div>
-            <div class="xw-pause" id="xw-pause">
-              <p style="font-size:.9rem;color:var(--ink-soft)">Your puzzle is paused</p>
-              <button class="pill" id="xw-resume">Resume</button>
-            </div>
-          </div>
-          <div class="xw-cluebar">
-            <button class="arrow" id="xw-prev" aria-label="Previous clue"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
-            <div class="text" id="xw-cluetext"></div>
-            <button class="arrow" id="xw-next" aria-label="Next clue"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
-          </div>
-        </div>
-        <div class="xw-lists">
-          <div class="xw-clue-col"><h4>Across</h4><ol id="xw-across"></ol></div>
-          <div class="xw-clue-col"><h4>Down</h4><ol id="xw-down"></ol></div>
-        </div>
-      </div>
-    </div>
-    <div class="kb" id="xw-keyboard"></div>
   </div>
 
   <!-- ---------- CONNECTIONS ---------- -->
@@ -722,12 +569,9 @@ try {
 }
 
 /* ============================================================================
-   10. DATA — the only part you need to touch to change the puzzles.
+   9. DATA — the only part you need to touch to change the puzzles.
    ----------------------------------------------------------------------------
    Every game has exactly three entries, in order: easy, medium, hard.
-   CROSSWORD    grid: N strings of N characters, "#" = black square. Clue keys
-                are "A<number>" / "D<number>"; numbering is derived from the
-                grid, so a missing clue simply shows as "—".
    CONNECTIONS  groups run easiest (yellow) to hardest (purple).
    STRANDS      each word lists the path its letters take, as [row, col] pairs.
                 `extras` are ordinary words hidden in the same board; three of
@@ -740,9 +584,8 @@ const CONFIG = {
   shareTag    : 'B&M Connections',
   splashMs    : 2000,          // how long the yellow screen holds
   scoring: {
-    hintPenalty    : 5,        // seconds per Strands hint / crossword Check
-    mistakePenalty : 0,        // seconds per Connections mistake (0 = free)
-    revealVoids    : true      // Reveal keeps a crossword run off the board
+    hintPenalty    : 5,        // seconds per Strands hint
+    mistakePenalty : 0         // seconds per Connections mistake (0 = free)
   },
   // Shown one at a time on the loading screen.
   splashLines: [
@@ -761,61 +604,6 @@ const CONFIG = {
 
 const LEVELS = ['Easy', 'Medium', 'Hard'];
 const DATA = {};
-
-DATA.crossword = [
-  {
-    id:'xw-easy', label:'Easy',
-    grid:['##WEB','#FIVE','RUPEE','USER#','BED##'],
-    clues:{
-      A1:'Spider\'s work',            A4:'Number of people in the wedding party',
-      A5:'Currency of India',         A6:'Person on an app',
-      A7:'Where you\'ll want to be by 11pm',
-      D1:'Cleaned, as a whiteboard',  D2:'Always',
-      D3:'Honey maker',               D4:'Blow one, and the lights go out',
-      D5:'Massage gently'
-    }
-  },
-  {
-    id:'xw-medium', label:'Medium',
-    grid:['SAW#DAY','PIE#IRE','ADDICTS','##DOT##','SPINACH','URN#TOE','BOG#EON'],
-    clues:{
-      A1:'Cut with a toothed blade',       A4:'Twenty-four hours',
-      A7:'Dessert with a crust',           A8:'Righteous anger',
-      A9:'Can\'t-stop-won\'t-stop types',  A11:'Full stop, to a Brit',
-      A12:'Popeye\'s power source',        A16:'Vase for ashes',
-      A17:'Casualty of a stubbed foot',    A18:'Wetland',
-      A19:'A very long stretch of time',
-      D1:'Where you go to be pummelled, pleasantly',
-      D2:'Lend a hand',                    D3:'What we\'re throwing in January',
-      D4:'Lay down the law',               D5:'What hangs in a gallery',
-      D6:'The answer we\'re hoping for on the RSVP',
-      D10:'Charged particle',              D12:'Sandwich, or a boat',
-      D13:'Not an amateur',                D14:'Sound a dove makes',
-      D15:'Layer of eggs'
-    }
-  },
-  {
-    id:'xw-hard', label:'Hard',
-    grid:['CAN#FEW','AGE#OWE','POWERED','##BOG##','PHONING','OUR#VIE','TEN#ELM'],
-    clues:{
-      A1:'Tin, or the ability to',          A4:'Not many, and the seating plan thanks you',
-      A7:'It comes with wisdom, allegedly', A8:'Be in the red to',
-      A9:'Running on batteries',            A11:'Where you get stuck, or bogged',
-      A12:'Ringing, and not the church kind',
-      A16:'Belonging to the two of us',     A17:'Compete',
-      A18:'What a bride counts to before the aisle',
-      A19:'Tree on many an American main street',
-      D1:'Top of a bottle, or a graduate\'s throw',
-      D2:'Water under the bridge, time-wise',
-      D3:'Fresh arrival — the reason half our friends may send apologies',
-      D4:'What you\'ll do about the seating, eventually',
-      D5:'She\'s got a lamb somewhere',      D6:'What we\'re doing, in three letters',
-      D10:'An age, or a particle',           D12:'It gets a watched one that never boils',
-      D13:'Shade, or the colour itself',     D14:'Score at the start of a match',
-      D15:'It\'s on the fourth finger'
-    }
-  }
-];
 
 DATA.connections = [
   {
@@ -1047,7 +835,6 @@ document.addEventListener('click', e => { if (e.target.closest('[data-close-shee
 
 /* --- leaderboards --------------------------------------------------------- */
 const GAME_META = {
-  xw: { name:'The Midi',    tone:'g-blue',   list:() => DATA.crossword },
   cx: { name:'Connections', tone:'g-purple', list:() => DATA.connections },
   st: { name:'Strands',     tone:'g-mint',   list:() => DATA.strands }
 };
@@ -1092,7 +879,7 @@ async function renderBoard(mount, id, highlight){
   });
 }
 
-// "xw:xw-easy" -> { gameName:'The Midi', levelLabel:'Easy' }, for the
+// "cx:cx-easy" -> { gameName:'Connections', levelLabel:'Easy' }, for the
 // activity feed below. Falls back to the raw id if the puzzle can't be
 // found (e.g. old data referencing a since-renamed/removed puzzle).
 function describeBoard(id){
@@ -1133,7 +920,7 @@ async function renderRecentActivity(mount){
   });
 }
 
-// `game` is the board id shape used throughout, e.g. "xw:xw-easy". Returns
+// `game` is the board id shape used throughout, e.g. "cx:cx-easy". Returns
 // the inserted row's id (for highlighting it in the board just rendered) or
 // null if the insert failed -- a failed insert shouldn't crash the sheet.
 async function submitScoreToSupabase(name, game, score){
@@ -1148,7 +935,7 @@ async function submitScoreToSupabase(name, game, score){
 }
 
 // The consolidated page: one section per game, difficulty on a segmented
-// control so all nine boards are one tap apart and nothing has to reload.
+// control so all six boards are one tap apart and nothing has to reload.
 function buildBoardsPage(){
   renderRecentActivity($('#recent-mount'));
   const mount = $('#boards-mount');
@@ -1241,10 +1028,9 @@ function show(view){
   $('#btn-home').hidden  = false;  // always visible: hub -> origin invite, elsewhere -> hub
   $('#btn-board').hidden = !inGame;
   if (view === 'hub')        setTitle('Games', CONFIG.coupleNames);
-  else if (view === 'board') setTitle('Leaderboard', 'Nine boards, three times each');
+  else if (view === 'board') setTitle('Leaderboard', 'Six boards, three times each');
   try { window.scrollTo(0, 0); } catch (e) {}
 
-  if (!inGame && GAMES.xw) GAMES.xw.pause(true);
   if (view === 'board') buildBoardsPage();
   if (inGame) requestAnimationFrame(() => GAMES[view].fit());
 }
@@ -1313,372 +1099,6 @@ window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => { if (GAMES[currentView]) GAMES[currentView].fit(); }, 80);
 });
-
-/* ---------------------------------------------------------------------------
-   CROSSWORD
-   ------------------------------------------------------------------------- */
-const XW = {
-  size:7, idx:0, puzzle:null, cells:[], entries:[], cur:0, dir:'A',
-  paused:false, solved:false, usedReveal:false, checks:0, penalty:0,
-  clock:null,
-
-  init(){
-    XW.clock = makeClock('#xw-timer', () => currentView === 'xw' && !XW.paused && !XW.solved);
-    XW.buildKeyboard();
-
-    $('#xw-grid').addEventListener('click', e => {
-      const c = e.target.closest('.xw-cell');
-      if (!c || c.classList.contains('block') || XW.paused) return;
-      XW.clock.begin();
-      const i = +c.dataset.i;
-      if (i === XW.cur) XW.setDir(XW.dir === 'A' ? 'D' : 'A');
-      else XW.setCursor(i);
-    });
-
-    $('#xw-prev').addEventListener('click', () => { XW.clock.begin(); XW.stepEntry(-1); });
-    $('#xw-next').addEventListener('click', () => { XW.clock.begin(); XW.stepEntry(1); });
-    $('#xw-playpause').addEventListener('click', () => XW.pause(!XW.paused));
-    $('#xw-resume').addEventListener('click', () => XW.pause(false));
-
-    // Check / Reveal dropdowns
-    const wire = (btn, menu) => {
-      $(btn).addEventListener('click', e => {
-        e.stopPropagation();
-        const m = $(menu), wasOpen = m.classList.contains('open');
-        $$('.menu').forEach(x => x.classList.remove('open'));
-        if (!wasOpen) m.classList.add('open');
-      });
-    };
-    wire('#xw-check-btn', '#xw-check-menu');
-    wire('#xw-reveal-btn', '#xw-reveal-menu');
-    document.addEventListener('click', () => $$('.menu').forEach(m => m.classList.remove('open')));
-    $('#xw-check-menu').addEventListener('click', e => {
-      const b = e.target.closest('[data-check]'); if (!b) return;
-      XW.check(b.dataset.check);
-    });
-    $('#xw-reveal-menu').addEventListener('click', e => {
-      const b = e.target.closest('[data-reveal]'); if (!b) return;
-      if (b.dataset.reveal === 'clear') XW.clearAll(); else XW.reveal(b.dataset.reveal);
-    });
-
-    document.addEventListener('keydown', e => {
-      if (currentView !== 'xw' || scrim.classList.contains('open') || XW.paused) return;
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (/^[a-zA-Z]$/.test(e.key)) { e.preventDefault(); XW.clock.begin(); XW.type(e.key.toUpperCase()); }
-      else if (e.key === 'Backspace') { e.preventDefault(); XW.backspace(); }
-      else if (e.key === ' ') { e.preventDefault(); XW.setDir(XW.dir === 'A' ? 'D' : 'A'); }
-      else if (e.key === 'Tab') { e.preventDefault(); XW.stepEntry(e.shiftKey ? -1 : 1); }
-      else if (e.key.startsWith('Arrow')) { e.preventDefault(); XW.arrow(e.key); }
-    });
-
-    XW.loadPuzzle(0);
-  },
-
-  /* --- build ------------------------------------------------------------- */
-  loadPuzzle(idx){
-    const p = DATA.crossword[idx];
-    XW.idx = idx;
-    $('#xw-lvl').textContent = p.label;
-    XW.puzzle = p; XW.solved = false; XW.usedReveal = false; XW.checks = 0; XW.penalty = 0;
-    const N = XW.size = p.grid.length;
-    XW.cells = []; XW.entries = [];
-
-    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++){
-      const ch = p.grid[r][c];
-      XW.cells.push({ i:r*N+c, r, c, block:ch === '#', sol:ch, letter:'', num:null, A:null, D:null, revealed:false, wrong:false });
-    }
-    const at = (r,c) => (r<0||c<0||r>=N||c>=N) ? null : XW.cells[r*N+c];
-
-    let num = 1;
-    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++){
-      const cell = at(r,c); if (cell.block) continue;
-      const startA = (!at(r,c-1) || at(r,c-1).block) && at(r,c+1) && !at(r,c+1).block;
-      const startD = (!at(r-1,c) || at(r-1,c).block) && at(r+1,c) && !at(r+1,c).block;
-      if (!startA && !startD) continue;
-      cell.num = num;
-      if (startA){
-        const list = []; let x = c;
-        while (at(r,x) && !at(r,x).block){ list.push(r*N+x); x++; }
-        XW.entries.push({ dir:'A', num, cells:list, clue:p.clues['A'+num] || '—' });
-      }
-      if (startD){
-        const list = []; let y = r;
-        while (at(y,c) && !at(y,c).block){ list.push(y*N+c); y++; }
-        XW.entries.push({ dir:'D', num, cells:list, clue:p.clues['D'+num] || '—' });
-      }
-      num++;
-    }
-    XW.entries.forEach((en, ei) => en.cells.forEach(ci => { XW.cells[ci][en.dir] = ei; }));
-
-    XW.render();
-    XW.renderClueLists();
-
-    XW.dir = 'A';
-    XW.setCursor(XW.entries.find(e => e.dir === 'A').cells[0]);
-    XW.clock.reset();
-    $('#xw-pen').textContent = '';
-    XW.pause(false);
-    XW.fit();
-  },
-
-  // The grid is measured into whatever room is left, so the page never scrolls.
-  fit(){
-    const area = $('#xw-fit'), g = $('#xw-grid');
-    if (!area || !g) return;
-    const w = area.clientWidth, h = area.clientHeight;
-    if (!w || !h) return;
-    const size = Math.max(140, Math.floor(Math.min(w, h)));
-    g.style.width = size + 'px';
-    g.style.height = size + 'px';
-    g.style.fontSize = Math.floor((size / XW.size) * 0.5) + 'px';
-  },
-
-  inProgress(){ return XW.clock.started && !XW.solved; },
-
-  reset(){ XW.loadPuzzle(XW.idx); },
-
-  render(){
-    const g = $('#xw-grid'); g.innerHTML = '';
-    g.style.gridTemplateColumns = 'repeat(' + XW.size + ',1fr)';
-    g.style.gridTemplateRows = 'repeat(' + XW.size + ',1fr)';
-    XW.cells.forEach(cell => {
-      const d = el('div', 'xw-cell' + (cell.block ? ' block' : ''));
-      d.dataset.i = cell.i;
-      if (!cell.block){
-        if (cell.num) d.appendChild(el('span','num',String(cell.num)));
-        const l = el('span','ltr',''); d.appendChild(l); cell.ltrEl = l;
-      }
-      cell.el = d; g.appendChild(d);
-    });
-  },
-
-  renderClueLists(){
-    ['A','D'].forEach(dir => {
-      const mount = $(dir === 'A' ? '#xw-across' : '#xw-down');
-      mount.innerHTML = '';
-      XW.entries.forEach((en, ei) => {
-        if (en.dir !== dir) return;
-        const li = el('li','xw-clue');
-        li.dataset.e = ei;
-        li.appendChild(el('b', null, String(en.num)));
-        li.appendChild(el('span', null, en.clue));
-        li.addEventListener('click', () => { XW.clock.begin(); XW.dir = dir; XW.setCursor(XW.firstEmptyIn(ei)); });
-        mount.appendChild(li);
-        en.li = li;
-      });
-    });
-  },
-
-  /* --- cursor ------------------------------------------------------------ */
-  entryIdx(){ const c = XW.cells[XW.cur]; return c[XW.dir] != null ? c[XW.dir] : c[XW.dir === 'A' ? 'D' : 'A']; },
-  firstEmptyIn(ei){
-    const en = XW.entries[ei];
-    return en.cells.find(i => !XW.cells[i].letter) ?? en.cells[0];
-  },
-  setDir(d){
-    if (XW.cells[XW.cur][d] == null) return;
-    XW.dir = d; XW.paint();
-  },
-  setCursor(i){
-    if (XW.cells[i].block) return;
-    XW.cur = i;
-    if (XW.cells[i][XW.dir] == null) XW.dir = XW.dir === 'A' ? 'D' : 'A';
-    XW.paint();
-  },
-  paint(){
-    const ei = XW.entryIdx();
-    const inWord = ei != null ? XW.entries[ei].cells : [];
-    XW.cells.forEach(c => { if (c.el) c.el.classList.remove('in-word','cursor'); });
-    inWord.forEach(i => XW.cells[i].el.classList.add('in-word'));
-    XW.cells[XW.cur].el.classList.add('cursor');
-
-    XW.entries.forEach((en, k) => {
-      if (!en.li) return;
-      en.li.classList.toggle('in-word', k === ei);
-      en.li.classList.toggle('active', k === ei);
-      en.li.classList.toggle('done', en.cells.every(i => XW.cells[i].letter));
-    });
-    if (ei != null){
-      const en = XW.entries[ei];
-      $('#xw-cluetext').innerHTML = '<b>' + en.num + (en.dir === 'A' ? 'A' : 'D') + '</b> ' + en.clue;
-      if (en.li && en.li.scrollIntoView) en.li.scrollIntoView({ block:'nearest' });
-    }
-  },
-  stepEntry(delta){
-    const list = XW.entries.map((e,i) => i).filter(i => XW.entries[i].dir === XW.dir);
-    const pos = list.indexOf(XW.entryIdx());
-    let next = pos + delta;
-    if (next < 0 || next >= list.length){          // wrap into the other direction
-      XW.dir = XW.dir === 'A' ? 'D' : 'A';
-      const other = XW.entries.map((e,i) => i).filter(i => XW.entries[i].dir === XW.dir);
-      XW.setCursor(XW.firstEmptyIn(delta > 0 ? other[0] : other[other.length - 1]));
-      return;
-    }
-    XW.setCursor(XW.firstEmptyIn(list[next]));
-  },
-  arrow(key){
-    const c = XW.cells[XW.cur], N = XW.size;
-    const want = (key === 'ArrowLeft' || key === 'ArrowRight') ? 'A' : 'D';
-    if (XW.dir !== want && c[want] != null){ XW.setDir(want); return; }
-    const step = { ArrowLeft:[0,-1], ArrowRight:[0,1], ArrowUp:[-1,0], ArrowDown:[1,0] }[key];
-    let r = c.r + step[0], col = c.c + step[1];
-    while (r >= 0 && col >= 0 && r < N && col < N){
-      const t = XW.cells[r*N + col];
-      if (!t.block){ XW.setCursor(t.i); return; }
-      r += step[0]; col += step[1];
-    }
-  },
-
-  /* --- entry ------------------------------------------------------------- */
-  setLetter(i, L, animate){
-    const c = XW.cells[i];
-    c.letter = L; c.wrong = false;
-    if (!L) c.revealed = false;
-    c.el.classList.toggle('wrong', false);
-    c.el.classList.toggle('revealed', c.revealed);
-    c.ltrEl.textContent = L;
-    if (animate && L){
-      c.ltrEl.classList.remove('pop'); void c.ltrEl.offsetWidth; c.ltrEl.classList.add('pop');
-    }
-  },
-  type(L){
-    if (XW.solved) return;
-    XW.setLetter(XW.cur, L, true);
-    const ei = XW.entryIdx();
-    if (ei != null){
-      const en = XW.entries[ei];
-      if (en.cells.every(i => XW.cells[i].letter)){
-        if (en.cells.every(i => XW.cells[i].letter === XW.cells[i].sol)) XW.flashWord(en);
-      }
-    }
-    if (XW.isComplete()){ XW.paint(); XW.finish(); return; }
-    XW.advance();
-  },
-  advance(){
-    const ei = XW.entryIdx(); if (ei == null) return;
-    const en = XW.entries[ei];
-    const pos = en.cells.indexOf(XW.cur);
-    const after = en.cells.slice(pos + 1).find(i => !XW.cells[i].letter);
-    if (after != null) return XW.setCursor(after);
-    if (pos + 1 < en.cells.length) return XW.setCursor(en.cells[pos + 1]);
-    XW.stepEntry(1);
-  },
-  backspace(){
-    const c = XW.cells[XW.cur];
-    if (c.letter){ XW.setLetter(XW.cur, '', false); XW.paint(); return; }
-    const ei = XW.entryIdx(); if (ei == null) return;
-    const en = XW.entries[ei];
-    const pos = en.cells.indexOf(XW.cur);
-    if (pos > 0){
-      XW.setCursor(en.cells[pos - 1]);
-      XW.setLetter(XW.cur, '', false);
-    }
-    XW.paint();
-  },
-  flashWord(en){
-    en.cells.forEach((i, k) => {
-      const cell = XW.cells[i];
-      setTimeout(() => {
-        cell.el.classList.remove('correct-flash'); void cell.el.offsetWidth;
-        cell.el.classList.add('correct-flash');
-        setTimeout(() => cell.el.classList.remove('correct-flash'), 520);
-      }, k * 55);
-    });
-  },
-
-  /* --- check / reveal ---------------------------------------------------- */
-  targets(scope){
-    if (scope === 'square') return [XW.cur];
-    if (scope === 'word'){ const ei = XW.entryIdx(); return ei == null ? [XW.cur] : XW.entries[ei].cells; }
-    return XW.cells.filter(c => !c.block).map(c => c.i);
-  },
-  check(scope){
-    if (!XW.solved && XW.clock.started){
-      XW.checks++; XW.penalty += CONFIG.scoring.hintPenalty;
-      $('#xw-pen').textContent = '+' + XW.penalty + 's';
-      toast('Check used · +' + CONFIG.scoring.hintPenalty + 's', 1500);
-    }
-    let bad = 0;
-    XW.targets(scope).forEach(i => {
-      const c = XW.cells[i];
-      if (!c.letter) return;
-      const wrong = c.letter !== c.sol;
-      c.wrong = wrong; c.el.classList.toggle('wrong', wrong);
-      if (wrong) bad++;
-    });
-    toast(bad ? bad + (bad === 1 ? ' letter is wrong' : ' letters are wrong') : 'Looking good so far');
-  },
-  reveal(scope){
-    XW.usedReveal = true;
-    XW.targets(scope).forEach(i => {
-      const c = XW.cells[i];
-      if (c.letter === c.sol) return;
-      c.revealed = true;
-      XW.setLetter(i, c.sol, true);
-      c.el.classList.add('revealed');
-    });
-    XW.paint();
-    if (XW.isComplete()) XW.finish();
-  },
-  clearAll(){ XW.loadPuzzle(XW.idx); },   // clean slate: grid, timer and penalties
-
-  /* --- state ------------------------------------------------------------- */
-  isComplete(){ return XW.cells.every(c => c.block || c.letter === c.sol); },
-
-  async finish(){
-    if (XW.solved) return;
-    XW.solved = true; XW.clock.stop();
-    const order = XW.cells.filter(c => !c.block);
-    order.forEach(c => {
-      c.el.style.animationDelay = ((c.r + c.c) * 45) + 'ms';
-      c.el.classList.add('finale');
-    });
-    await wait(900);
-    order.forEach(c => { c.el.classList.remove('finale'); c.el.style.animationDelay = ''; });
-    if (!XW.usedReveal) confetti();
-    resultsSheet({
-      game:'xw', puzzleId:XW.puzzle.id, label:XW.puzzle.label,
-      kicker:'Solved', title:'Nicely done',
-      blurb:'Every square in ' + XW.puzzle.label + ' is right.',
-      secs:XW.clock.secs, penalty:XW.penalty,
-      penaltyLabel:'Checks (' + XW.checks + ' × ' + CONFIG.scoring.hintPenalty + 's)',
-      unranked:XW.usedReveal && CONFIG.scoring.revealVoids,
-      note:'You used Reveal, so this run stays off the board. Clear the puzzle and it\'s a fresh start.'
-    });
-  },
-
-  /* --- timer ------------------------------------------------------------- */
-  pause(on){
-    XW.paused = !!on;
-    $('#xw-pause').classList.toggle('on', XW.paused);
-    $('#xw-playpause').innerHTML = XW.paused
-      ? '<svg viewBox="0 0 24 24"><path d="M8 5.5l11 6.5-11 6.5z"/></svg>'
-      : '<svg viewBox="0 0 24 24"><rect x="8" y="6" width="3" height="12" rx="1"/><rect x="14" y="6" width="3" height="12" rx="1"/></svg>';
-  },
-
-
-  /* --- on-screen keyboard ------------------------------------------------ */
-  buildKeyboard(){
-    const rows = ['QWERTYUIOP','ASDFGHJKL','ZXCVBNM'];
-    const kb = $('#xw-keyboard'); kb.innerHTML = '';
-    rows.forEach((row, ri) => {
-      const r = el('div','kb-row');
-      row.split('').forEach(k => {
-        const b = el('button', null, k);
-        b.addEventListener('click', () => { if (!XW.paused){ XW.clock.begin(); XW.type(k); } });
-        r.appendChild(b);
-      });
-      if (ri === 2){
-        const b = el('button','wide');
-        b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M20 6H9L3 12l6 6h11a1 1 0 001-1V7a1 1 0 00-1-1z"/><path d="M17 10l-4 4M13 10l4 4"/></svg>';
-        b.setAttribute('aria-label','Delete');
-        b.addEventListener('click', () => { if (!XW.paused) XW.backspace(); });
-        r.appendChild(b);
-      }
-      kb.appendChild(r);
-    });
-  }
-};
 
 /* ---------------------------------------------------------------------------
    CONNECTIONS
@@ -2140,8 +1560,8 @@ const ST = {
 
 
 /* --- boot ----------------------------------------------------------------- */
-GAMES.xw = XW; GAMES.cx = CX; GAMES.st = ST;
-XW.init(); CX.init(); ST.init();
+GAMES.cx = CX; GAMES.st = ST;
+CX.init(); ST.init();
 
 // Loading screen: one line, chosen at random, then out of the way.
 const splash = $('#splash');
