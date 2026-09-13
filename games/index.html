@@ -113,6 +113,53 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
   max-width:34ch;margin:12px auto 0;
 }
 
+/* ── "latest activity" ticker, sits between the intro and the game cards ── */
+.hub-ticker{
+  display:flex; align-items:center; gap:12px;
+  margin:0 0 22px; background:var(--ink); border-radius:999px;
+  padding:9px 9px 9px 16px; overflow:hidden;
+}
+.hub-ticker[hidden]{ display:none; }
+.hub-ticker__tag{
+  flex:0 0 auto; display:flex; align-items:center; gap:6px;
+  font-size:.62rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase;
+  color:#fff; white-space:nowrap;
+}
+.hub-ticker__tag::before{
+  content:""; width:6px; height:6px; border-radius:50%; background:var(--splash);
+  animation:tickerPulse 1.8s ease-out infinite;
+}
+@keyframes tickerPulse{
+  0%{ box-shadow:0 0 0 0 rgba(255,218,0,.55); }
+  70%{ box-shadow:0 0 0 6px rgba(255,218,0,0); }
+  100%{ box-shadow:0 0 0 0 rgba(255,218,0,0); }
+}
+.hub-ticker__viewport{
+  flex:1 1 auto; min-width:0; overflow:hidden;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);
+          mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);
+}
+.hub-ticker__track{
+  display:flex; align-items:center; width:max-content;
+  animation:tickerScroll 20s linear infinite;
+}
+.hub-ticker__track.no-scroll{ animation:none; }
+@keyframes tickerScroll{
+  from{ transform:translateX(0); }
+  to{ transform:translateX(-50%); }
+}
+.hub-ticker__item{
+  display:flex; align-items:center; gap:7px;
+  font-size:.78rem; font-weight:500; color:#fff; white-space:nowrap;
+  padding:0 16px;
+}
+.hub-ticker__item b{ font-weight:700; }
+.hub-ticker__icon{ width:15px; height:15px; flex:0 0 auto; display:block; border-radius:4px; overflow:hidden; }
+.hub-ticker__sep{ color:rgba(255,255,255,.35); font-size:.6rem; }
+@media (prefers-reduced-motion: reduce){
+  .hub-ticker__track{ animation:none; }
+}
+
 .gcard-group{margin-bottom:22px;}
 .gcard{
   border-radius:var(--radius);padding:22px 22px 18px;position:relative;
@@ -407,6 +454,13 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
         <div class="couple">Bernadette &amp; Mark · <span id="hub-date">16–17 January 2027</span></div>
         <h1>A little something while you wait</h1>
         <p class="hub-sub">If there&rsquo;s one thing about us, we love a good game. Get to know us better and see where you land on the leaderboard!</p>
+      </div>
+
+      <div class="hub-ticker" id="hubTicker" hidden aria-label="Latest game activity">
+        <span class="hub-ticker__tag">Live</span>
+        <div class="hub-ticker__viewport">
+          <div class="hub-ticker__track" id="hubTickerTrack"></div>
+        </div>
       </div>
 
       <div class="gcard-group g-purple">
@@ -920,6 +974,50 @@ async function renderRecentActivity(mount){
   });
 }
 
+// Small round icons matching the ones on the invite pages' dock, reused here
+// so the hub ticker reads as the same widget wherever a guest sees it.
+const TICKER_ICONS = {
+  cx: '<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="32" fill="#fff"/><rect x="14" y="14" width="16" height="16" rx="3" fill="#F9DF6D"/><rect x="34" y="14" width="16" height="16" rx="3" fill="#A0C35A"/><rect x="14" y="34" width="16" height="16" rx="3" fill="#B0C4EF"/><rect x="34" y="34" width="16" height="16" rx="3" fill="#BA81C5"/></svg>',
+  st: '<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="32" fill="#AEDFDF"/><path d="M20 42c0-8 6-10 12-10s12-2 12-10" fill="none" stroke="#1D6B6B" stroke-width="3.5" stroke-linecap="round"/><g fill="#1D6B6B"><circle cx="20" cy="42" r="4.5"/><circle cx="32" cy="32" r="4.5"/><circle cx="44" cy="22" r="4.5"/></g></svg>'
+};
+
+// Same feed as renderRecentActivity above, but as a scrolling ticker for the
+// hub itself rather than a static list on the leaderboard page.
+async function renderHubTicker(){
+  const ticker = $('#hubTicker');
+  const track  = $('#hubTickerTrack');
+  if (!ticker || !track || !sb) return;
+  const { data, error } = await sb
+    .from('leaderboard')
+    .select('name, game, created_at')
+    .order('created_at', { ascending: false })
+    .limit(3);
+  if (error){ console.error('Hub ticker fetch failed:', error); return; }
+  const described = (data || [])
+    .map(r => { const d = describeBoard(r.game); return d ? { name: r.name, icon: TICKER_ICONS[r.game.split(':')[0]] || '', ...d } : null; })
+    .filter(Boolean);
+  if (!described.length) return;
+
+  const copies = described.length > 1 ? 2 : 1;
+  for (let c = 0; c < copies; c++){
+    described.forEach(d => {
+      const item = el('span','hub-ticker__item');
+      item.innerHTML = '<span class="hub-ticker__icon">' + d.icon + '</span>' +
+        '<span><b>' + esc(d.name) + '</b> played <b>' + esc(d.gameName) + '</b>' +
+        (d.levelLabel ? ' · ' + esc(d.levelLabel) : '') + '</span>';
+      track.appendChild(item);
+      const sep = el('span','hub-ticker__sep','✦');
+      sep.setAttribute('aria-hidden','true');
+      track.appendChild(sep);
+    });
+  }
+  if (copies === 1) track.classList.add('no-scroll');
+  ticker.hidden = false;
+}
+function esc(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
 // `game` is the board id shape used throughout, e.g. "cx:cx-easy". Returns
 // the inserted row's id (for highlighting it in the board just rendered) or
 // null if the insert failed -- a failed insert shouldn't crash the sheet.
@@ -1093,6 +1191,7 @@ $$('.levels').forEach(row => {
   });
 });
 $('#hub-date').textContent = CONFIG.weddingDate;
+renderHubTicker();
 
 let resizeTimer = null;
 window.addEventListener('resize', () => {
