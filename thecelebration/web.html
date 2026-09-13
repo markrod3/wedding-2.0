@@ -613,14 +613,11 @@ a{ color:inherit; text-decoration:none; }
 .registry__left{ min-width:0; }   /* lets the ticker's clipped scroll track size to the column, not its own content */
 
 /* ── games dock — icons float free, so each magnification has room ── */
-.games-row{
-  display:flex; align-items:center; gap:24px;
-  margin:clamp(2.5rem,4vw,3.5rem) 0 0;
-}
 .dock{
   display:flex; align-items:center;
   gap:clamp(1.5rem,3vw,3rem);
-  flex:1 1 0; min-width:0;
+  width:max-content; max-width:100%;
+  margin:clamp(2.5rem,4vw,3.5rem) 0 0;
 }
 .dock__item{
   display:grid; place-items:center; flex:none;
@@ -637,7 +634,7 @@ a{ color:inherit; text-decoration:none; }
 /* ── "latest activity" ticker, styled after the NYT Games app ── */
 .nyt-ticker{
   display:flex; align-items:center; gap:12px;
-  flex:1 1 0; min-width:0; margin:0;
+  width:100%; margin:28px 0 0;
   background:var(--ink); border-radius:999px;
   box-shadow:0 6px 16px rgba(69,26,3,.18);
   padding:9px 9px 9px 16px;
@@ -870,7 +867,6 @@ a{ color:inherit; text-decoration:none; }
         </div>
 
         <!-- EDIT: the first three point at the games themselves; the arrow is yours to set -->
-        <div class="games-row">
         <nav class="dock fade" aria-label="Games">
 
           <a class="dock__item games-link" href="/games/" aria-label="Connections">
@@ -922,11 +918,10 @@ a{ color:inherit; text-decoration:none; }
         </nav>
 
         <div class="nyt-ticker" id="nytTicker" hidden aria-label="Latest game activity">
-          <span class="nyt-ticker__tag"><span class="nyt-ticker__tag-label">Live in Games</span></span>
+          <span class="nyt-ticker__tag">Live in Games</span>
           <div class="nyt-ticker__viewport">
             <div class="nyt-ticker__track" id="nytTickerTrack"></div>
           </div>
-        </div>
         </div>
       </div>
 
