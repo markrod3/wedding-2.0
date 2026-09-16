@@ -728,7 +728,7 @@ DATA.strands = [
   },
   {
     id: 'st-medium', label: 'Medium', level: 'medium',
-    theme: "The goats",
+    theme: "The goats ⚽️❤️",
     spangram: 'MANUTD',
     grid: ['OIRYNO', 'MANERO', 'IDIUTD', 'VSCCON', 'EOHSRA', 'LNDSDL', 'EFAEOD', 'RNAEGE'],
     words: {
@@ -1570,7 +1570,7 @@ const ST = {
   async submit(){
     const path = ST.sel.slice();
     ST.sel = []; ST.tapMode = false;
-    if (path.length < 4){ ST.paint(); ST.redrawLines(); return; }
+    if (path.length < 3){ ST.paint(); ST.redrawLines(); return; }
 
     const word = path.map(([r,c]) => ST.puzzle.grid[r][c]).join('');
     const rev  = path.slice().reverse().map(([r,c]) => ST.puzzle.grid[r][c]).join('');
