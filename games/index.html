@@ -495,12 +495,11 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
           </svg>
           <h2>Strands</h2>
           <p>Find the hidden words and uncover the theme. The theme is always us.</p>
-          <div class="foot"><span class="n">Three levels</span><span class="by">By Mark (mostly)</span></div>
+          <div class="foot"><span class="n">Two levels</span><span class="by">By Mark (mostly)</span></div>
         </div>
         <div class="levels" data-game="st">
           <button data-level="0">Easy</button>
           <button data-level="1">Medium</button>
-          <button data-level="2">Hard</button>
         </div>
       </div>
 
@@ -508,7 +507,7 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
         <button class="gcard wide-link" id="go-boards">
           <div>
             <h2>Leaderboard</h2>
-            <p>Six boards. Find out who's been quietly practising.</p>
+            <p>Five boards. Find out who's been quietly practising.</p>
           </div>
           <span class="arrow">→</span>
         </button>
@@ -767,59 +766,6 @@ DATA.strands = [
       'TREY','TRUE','TUNA','TUNE','TURD','TURN','TURNER','UNICORN','UNISON',
     ]
   },
-  {
-    id: 'st-hard', label: 'Hard', level: 'hard',
-    theme: "Wheels up",
-    spangram: 'HONEYMOON',
-    grid: ['BSHPVP', 'NECOOI', 'OATSLO', 'RRCCLL', 'EKRARA', 'EEDUIS', 'LHFMEO', 'ONEYON'],
-    words: {
-      BEACH: [[0,0],[1,1],[2,1],[1,2],[0,2]],
-      SNORKEL: [[0,1],[1,0],[2,0],[3,0],[4,1],[5,0],[6,0]],
-      POSTCARD: [[0,3],[1,3],[2,3],[2,2],[3,2],[4,3],[4,2],[5,2]],
-      VILLA: [[0,4],[1,5],[2,4],[3,4],[4,5]],
-      POOL: [[0,5],[1,4],[2,5],[3,5]],
-      REEF: [[3,1],[4,0],[5,1],[6,2]],
-      CRUISE: [[3,3],[4,4],[5,3],[5,4],[5,5],[6,4]],
-      HONEYMOON: [[6,1],[7,0],[7,1],[7,2],[7,3],[6,3],[7,4],[6,5],[7,5]],
-    },
-    extras: [
-      'ACCLAIM','ACCRUE','ACES','ACHE','ACHES','ACRE','ACTS','ADELE','ADMIRAL','ADMIRALS',
-      'AIRS','ALAI','ALAS','ALLOCATE','ALLOT','ALSO','ARCADE','ARCANE','ARCS','ARIA','ARIES',
-      'ARISE','ARISEN','ARSON','ARTS','ASIA','ATOLL','ATOP','AURA','AURAL','AURAS','BEAN',
-      'BEANS','BEAR','BEARER','BEAT','BEATS','BETA','BETS','CACAO','CACHE','CACHES','CADE',
-      'CADRE','CALL','CALLA','CALLS','CANE','CANES','CANOE','CANOES','CANS','CARA','CARD',
-      'CARE','CARED','CAREER','CARER','CARL','CARLA','CARLO','CARS','CARSON','CART','CARTE',
-      'CARTS','CATCH','CATCHES','CATS','CHEAT','CHEATS','CHEN','CHOP','CLACK','CLAD','CLAIM',
-      'CLARA','CLARE','CLARION','CLARK','CLARKE','CLAUDE','CLIP','CLOP','CLOT','CLOTS',
-      'COLLAR','COLLARD','COLLARED','COLLARS','COOL','COOLS','COOP','COOS','COST','COSTA',
-      'COSTAR','COTS','CRACK','CRACKED','CRACKER','CRANE','CRANES','CRATE','CRATES','CRED',
-      'CREED','CREEK','CRIES','CRIME','CRIMES','CRONE','CRORE','CRUD','CRUDE','DAIMYO','DAIS',
-      'DALLAS','DARE','DARK','DARKER','DEER','DEFY','DRUM','DUAL','DUES','EACH','EATS','ECHO',
-      'EMIR','ENACT','EONS','ERRED','ERROR','ETCH','EYES','FEEL','FELON','FEMUR','FERAL',
-      'FUME','FUMES','FURIES','FURS','HEAR','HEART','HEARTS','HEAT','HEATS','HECTARE','HEED',
-      'HEEL','HENS','HERA','HERD','HERR','HOLE','HOLED','HONE','HONEY','HOOP','HOST','HOTS',
-      'ILLS','KEEL','KEELED','LACK','LACKED','LAIR','LAIRS','LALA','LARA','LARD','LARK',
-      'LARS','LAUD','LAURA','LAUREL','LAURIE','LEEK','LEER','LOCATE','LOCATES','LOLA',
-      'LOLLIPOP','LONE','LOOP','LOOS','LOOT','LOST','LOTS','MESA','MIRA','MISO','MONEY',
-      'MONO','MOON','MOOS','MOOSE','MURAL','MURALS','MURK','NACHO','NACHOS','NARC','NARCS',
-      'NARKED','NATE','NEAR','NEARER','NEAT','NECTAR','NETS','NEURAL','NOISE','NOME','NOMEN',
-      'NOOSE','NORA','NOSE','NOSEY','OATES','OATS','OCEAN','OCEANS','OCTANE','OILS','OMEN',
-      'ONES','ONSET','ORCA','OSCAR','OSCARS','PILL','PILLAR','PILLARS','PILLS','PILOT',
-      'PILOTS','PIVOT','POLIO','POLL','POLLACK','POLLS','POLO','POOCH','POOH','POOLS','POOP',
-      'POST','POTS','RACE','RACES','RACK','RACKED','RAISE','RARE','RATE','RATES','RATS',
-      'REDACT','REED','REEK','REEKED','REEL','REELED','RIOS','RISE','RISEN','ROACH','ROACHES',
-      'ROAN','ROAR','RUDE','RUDER','RURAL','SALAD','SALADE','SARA','SARI','SCALAR','SCALLOP',
-      'SCAN','SCANS','SCAR','SCARE','SCARED','SCARRED','SCARS','SCAT','SCHOOL','SCHOOLS',
-      'SCOOP','SCOT','SCOTS','SCRATCH','SCRUM','SEAN','SEAR','SEAT','SEATS','SECT','SECTS',
-      'SEMI','SENOR','SENORA','SETS','SHEA','SHEAR','SHOO','SHOP','SHOT','SHOTS','SIMON',
-      'SIMONE','SLACK','SLACKER','SLIP','SLOOP','SLOP','SLOT','SNACK','SNARE','SNATCH',
-      'SNORE','SNORT','SNORTS','SOIL','SOLO','SONE','SOON','SOOT','STACK','STACKED','STAN',
-      'STANS','STAR','STARE','STARK','STARRED','STENO','STOOL','STOOP','STOP','TACH','TACK',
-      'TACKED','TACO','TACOS','TANS','TARO','TARRED','TEACH','TEAR','TECHS','TENOR','TENS',
-      'TOLL','TOLLS','TOOL','TOOLS','TRACE','TRACES','TRACK','TRACKED','TRACKER','TREE',
-      'TREED','TREK','URALS','VILLAS','VIOLA','VOTE','VOTES','YEMEN',
-    ]
-  }
 ];
 
 /* ============================================================================
@@ -1032,7 +978,7 @@ async function submitScoreToSupabase(name, game, score){
 }
 
 // The consolidated page: one section per game, difficulty on a segmented
-// control so all six boards are one tap apart and nothing has to reload.
+// control so all five boards are one tap apart and nothing has to reload.
 function buildBoardsPage(){
   renderRecentActivity($('#recent-mount'));
   const mount = $('#boards-mount');
@@ -1125,7 +1071,7 @@ function show(view){
   $('#btn-home').hidden  = false;  // always visible: hub -> origin invite, elsewhere -> hub
   $('#btn-board').hidden = !inGame;
   if (view === 'hub')        setTitle('Games', CONFIG.coupleNames);
-  else if (view === 'board') setTitle('Leaderboard', 'Six boards, three times each');
+  else if (view === 'board') setTitle('Leaderboard', 'Five boards');
   try { window.scrollTo(0, 0); } catch (e) {}
 
   if (view === 'board') buildBoardsPage();
