@@ -207,6 +207,12 @@ a{ color:inherit; text-decoration:none; }
 }
 .marquee-band.is-open .mq-hint{ opacity:0; }
 
+/* nudge toward the RSVP buttons -- same handwritten note as the marquee's */
+.rsvp-hint{
+  font-family:var(--body); font-style:italic;
+  font-size:clamp(.85rem,1.3vw,1rem); letter-spacing:.02em;
+}
+
 /* click a photo and it opens out; click the open photo to close it */
 .mq-expand{
   position:absolute; z-index:6; cursor:pointer;
@@ -291,9 +297,13 @@ a{ color:inherit; text-decoration:none; }
 }
 
 /* ═══════════════════════ RSVP BUTTON + POPUP ═══════════════════════ */
-.rsvp-btn{
+.rsvp-btn-wrap{
   position:fixed; top:50%; left:14%; translate:0 -50%;
   z-index:65; width:clamp(120px,13vw,190px);
+  display:flex; flex-direction:column; align-items:center; gap:.5rem;
+}
+.rsvp-btn{
+  width:100%;
   opacity:0; visibility:hidden; cursor:pointer;
   background:none; border:0; padding:0; color:var(--white);
   filter:drop-shadow(0 2px 14px rgba(0,0,0,.35));
@@ -310,7 +320,13 @@ a{ color:inherit; text-decoration:none; }
 .rsvp-btn .word{ font-family:var(--display); font-weight:700; font-size:46px; letter-spacing:.04em; fill:currentColor; }
 .rsvp-btn:hover .frame{ transform:translate(-1px,2px); }
 .rsvp-btn:hover .ticks{ stroke-dashoffset:-4; }
-@media (min-width:1024px){ .rsvp-btn{ left:21%; } }
+.rsvp-btn-hint{
+  margin:0; text-align:center; color:rgba(255,255,255,.85);
+  opacity:0; visibility:hidden; pointer-events:none;
+  transition:opacity .5s ease, visibility .5s ease;
+}
+.rsvp-btn-hint.is-shown{ opacity:1; visibility:visible; }
+@media (min-width:1024px){ .rsvp-btn-wrap{ left:21%; } }
 
 .popup{ position:fixed; inset:0; z-index:90; display:none; }
 .popup.is-open{ display:block; }
@@ -375,6 +391,11 @@ a{ color:inherit; text-decoration:none; }
 .rsvp-early__btn .word{ font-family:var(--display); font-weight:700; font-size:46px; fill:currentColor; letter-spacing:.04em; }
 .rsvp-early__btn:hover .frame{ transform:translate(-1px,2px); }
 .rsvp-early__btn:hover .ticks-mark{ stroke-dashoffset:-4; }
+.rsvp-early__hint{
+  margin-top:.75rem; text-align:center; color:rgba(69,26,3,.6);
+  opacity:0; transition:opacity .7s ease .1s;
+}
+.rsvp-early.is-in .rsvp-early__hint{ opacity:1; }
 
 /* ═══════════════════════ CREAM SECTIONS ═══════════════════════ */
 .page{ position:relative; z-index:3; background:var(--cream); }
@@ -690,6 +711,7 @@ a{ color:inherit; text-decoration:none; }
       <text class="word" x="88" y="76" text-anchor="middle">RSVP</text>
     </svg>
   </button>
+  <p class="rsvp-hint rsvp-early__hint">tap to RSVP!</p>
 </section>
 
 <!-- ═══════════ SCHEDULE ═══════════ -->
@@ -716,16 +738,19 @@ a{ color:inherit; text-decoration:none; }
 <!-- ═══════════ RSVP BAND ═══════════ -->
 <section class="band rsvp-band" id="rsvp-band" aria-label="rsvp"></section>
 
-<button class="rsvp-btn" id="rsvpBtn" aria-haspopup="dialog">
-  <svg viewBox="0 0 176 112">
-    <path class="frame" d="M14 12c40-4 92-6 148-3 4 34 5 62 2 90-46 5-96 5-148 1-4-30-4-58-2-88z"/>
-    <path class="frame" d="M8 22c40-5 96-7 152-4 3 34 4 60 1 88-46 5-98 5-150 1-4-30-5-56-3-85z"/>
-    <path class="frame ticks" d="M16 20 6 34"/>
-    <path class="frame ticks" d="M14 92 6 104"/>
-    <path class="frame ticks" d="M166 88c-3 8-8 15-14 20"/>
-    <text class="word" x="88" y="76" text-anchor="middle">RSVP</text>
-  </svg>
-</button>
+<div class="rsvp-btn-wrap">
+  <button class="rsvp-btn" id="rsvpBtn" aria-haspopup="dialog">
+    <svg viewBox="0 0 176 112">
+      <path class="frame" d="M14 12c40-4 92-6 148-3 4 34 5 62 2 90-46 5-96 5-148 1-4-30-4-58-2-88z"/>
+      <path class="frame" d="M8 22c40-5 96-7 152-4 3 34 4 60 1 88-46 5-98 5-150 1-4-30-5-56-3-85z"/>
+      <path class="frame ticks" d="M16 20 6 34"/>
+      <path class="frame ticks" d="M14 92 6 104"/>
+      <path class="frame ticks" d="M166 88c-3 8-8 15-14 20"/>
+      <text class="word" x="88" y="76" text-anchor="middle">RSVP</text>
+    </svg>
+  </button>
+  <p class="rsvp-hint rsvp-btn-hint" id="rsvpBtnHint">tap to RSVP!</p>
+</div>
 
 <!-- No longer opened by the RSVP buttons above, which now link out to RSVP_URL. Left in place in case you want a fallback form later. -->
 <div class="popup" id="popup" role="dialog" aria-modal="true" aria-label="rsvp form">
@@ -851,9 +876,12 @@ a{ color:inherit; text-decoration:none; }
   /* rsvp button shows only while its band spans the middle of the viewport */
   var zone = document.getElementById('rsvp-band');
   var btn  = document.getElementById('rsvpBtn');
+  var btnHint = document.getElementById('rsvpBtnHint');
   function rsvpCheck(){
     var r = zone.getBoundingClientRect(), h = innerHeight;
-    btn.classList.toggle('is-shown', (r.top / h) < 0.3 && (r.bottom / h) > 0.7);
+    var shown = (r.top / h) < 0.3 && (r.bottom / h) > 0.7;
+    btn.classList.toggle('is-shown', shown);
+    if (btnHint) btnHint.classList.toggle('is-shown', shown);
   }
 
   var links = [].slice.call(document.querySelectorAll('.sidenav a'));
